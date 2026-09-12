@@ -110,7 +110,14 @@ Phần giao diện chỉ gọi ba hàm trên và vẽ kết quả.
 - Khối "Đơn giá" thu gọn được, gồm 3 đơn giá và số tháng mặc định. Lưu vào
   `localStorage` khoá `thue-settings` ngay khi thay đổi; đọc lại khi mở trang.
   Có nút "Khôi phục mặc định".
-- Không lưu dữ liệu Excel vào trình duyệt; mỗi lần mở trang phải chọn file lại.
+- Dữ liệu Excel đã nạp (mảng bản ghi sau `parseSheetRows`, tên file, thời điểm
+  nạp) được lưu vào `localStorage` khoá `thue-data` dạng JSON để lần sau mở
+  trang tự nạp lại, không phải chọn file. Bước 1 khi đó hiện "Đang dùng file
+  X, nạp lúc HH:MM dd/mm/yyyy, N dòng" kèm hai nút "Chọn file khác" và "Xoá dữ
+  liệu đã lưu". Chọn file mới sẽ ghi đè. Nếu lưu thất bại (hết chỗ, chế độ
+  riêng tư) vẫn dùng dữ liệu trong phiên và báo "Không lưu được vào trình duyệt,
+  lần sau cần chọn file lại". Dữ liệu chỉ nằm trong trình duyệt đó; trang không
+  gửi đi đâu.
 - Mọi truy cập `localStorage` bọc try/catch; thiếu hoặc hỏng thì dùng mặc định.
 
 ## Xử lý lỗi

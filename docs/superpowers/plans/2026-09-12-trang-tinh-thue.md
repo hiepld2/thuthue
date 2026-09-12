@@ -1255,3 +1255,78 @@ Sửa mục "Cách dùng" thành 5 bước: (0) kiểm tra đơn giá ở đầu
 git add index.html README.md
 git -c user.name="phucvm3" -c user.email="phucvm3@fpt.com" commit -m "feat: bố cục mới — đơn giá lên đầu, form số người, hoá đơn cuối trang, tối ưu di động"
 ```
+
+---
+
+### Task 9: Nhớ file Excel đã nạp trong trình duyệt; không cuộn khi focus lại dòng
+
+**Files:**
+- Modify: `index.html`
+- Modify: `README.md` (mục "Cách dùng", bước 1)
+
+**Interfaces:**
+- Consumes: `Thue.parseSheetRows` (đã có), `localStorage`.
+- Produces: khoá `localStorage` `thue-data` = JSON `{ v: 1, tenFile: string, luuLuc: number (ms), rows: Row[] }`.
+
+- [ ] **Step 1: Sửa focus gây cuộn**
+
+Trong `veKetQua()` đổi `liCanFocus.focus()` thành `liCanFocus.focus({ preventScroll: true })`.
+
+- [ ] **Step 2: Lưu và nạp lại dữ liệu**
+
+Thêm vào phần Bước 1 của HTML, ngay dưới `#trangThaiFile`, một khối `<div id="daLuu" class="hang-nut an"><button type="button" class="nut phu" id="nutChonKhac">Chọn file khác</button><button type="button" class="nut phu" id="nutXoaLuu">Xoá dữ liệu đã lưu</button></div>`.
+
+JS:
+
+```js
+const KHOA_DATA = 'thue-data';
+function luuData(tenFile, rows) {
+  try {
+    localStorage.setItem(KHOA_DATA, JSON.stringify({ v: 1, tenFile, luuLuc: Date.now(), rows }));
+    return true;
+  } catch (e) { return false; }
+}
+function docData() {
+  try {
+    const o = JSON.parse(localStorage.getItem(KHOA_DATA) || 'null');
+    if (!o || o.v !== 1 || !Array.isArray(o.rows) || !o.rows.length) return null;
+    return o;
+  } catch (e) { return null; }
+}
+function xoaData() { try { localStorage.removeItem(KHOA_DATA); } catch (e) { /* bỏ qua */ } }
+function dinhDangLuc(ms) {
+  const d = new Date(ms), p = n => String(n).padStart(2, '0');
+  return `${p(d.getHours())}:${p(d.getMinutes())} ${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()}`;
+}
+function apDungData(rows, tenFile, luuLuc, daLuuOk) {
+  cacHo = rows; daChon.clear(); hoDangChon = null; an('buoc3'); an('hoaDon');
+  const chu = `Đang dùng file "${tenFile}", nạp lúc ${dinhDangLuc(luuLuc)}, ${rows.length} dòng.`;
+  baoFile('ok', daLuuOk ? chu : chu + ' Không lưu được vào trình duyệt, lần sau cần chọn file lại.');
+  hien('daLuu'); hien('buoc2'); $('oTim').value = ''; timKiem();
+}
+```
+
+- Trong handler `change` của `#fileExcel`, sau khi `parseSheetRows` thành công: `const ok = luuData(f.name, r.rows); apDungData(r.rows, f.name, Date.now(), ok);` (thay cho đoạn gán `cacHo` và `baoFile` cũ). Khi lỗi: giữ nguyên thông báo lỗi, không đụng dữ liệu đã lưu.
+- Khi khởi động (cuối IIFE, sau khi kiểm tra `XLSX`): `const d = docData(); if (d) apDungData(d.rows, d.tenFile, d.luuLuc, true);`
+- `#nutChonKhac` → `$('fileExcel').click()`.
+- `#nutXoaLuu` → `xoaData(); cacHo = []; daChon.clear(); hoDangChon = null; an('daLuu'); an('buoc2'); an('buoc3'); an('hoaDon'); baoFile('ok', 'Đã xoá dữ liệu đã lưu. Hãy chọn file Excel.');`
+- Câu hướng dẫn Bước 1 thêm: "Trang sẽ nhớ file này trên trình duyệt cho lần sau."
+
+- [ ] **Step 3: Kiểm tra trên trình duyệt**
+
+1. Xoá `localStorage` (`localStorage.clear()`), tải lại: Bước 1 như cũ, không có khối `#daLuu`.
+2. Nạp file thật qua DataTransfer → trạng thái "Đang dùng file "that.xlsx", nạp lúc ..., 464 dòng."; `JSON.parse(localStorage.getItem('thue-data')).rows.length === 464`; kích cỡ `localStorage.getItem('thue-data').length` ghi lại (kỳ vọng dưới 500.000 ký tự).
+3. Tải lại trang (`navigate` cùng URL) → Bước 1 tự hiện trạng thái đang dùng file, Bước 2 hiện, tìm `pham van yem` ra 4 dòng mà không cần chọn file.
+4. Bấm "Xoá dữ liệu đã lưu" → `localStorage.getItem('thue-data') === null`, Bước 2 ẩn, thông báo "Đã xoá dữ liệu đã lưu. Hãy chọn file Excel."
+5. Nạp `test/mau.xlsx` → 11 dòng, rồi nạp file thật → ghi đè, 464 dòng.
+6. Cuộn: tìm `le`, `window.scrollTo(0,0)`, bấm dòng đầu → `window.scrollY` thay đổi không quá 5px, `document.activeElement` là `li`.
+7. `read_console_messages` onlyErrors → không có. 360px không tràn ngang.
+
+- [ ] **Step 4: README** — bước 1 ghi rõ trang nhớ file trên trình duyệt, cách chọn file khác và xoá dữ liệu.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add index.html README.md
+git -c user.name="phucvm3" -c user.email="phucvm3@fpt.com" commit -m "feat: nhớ file Excel đã nạp trong trình duyệt, không cuộn khi tích dòng"
+```
