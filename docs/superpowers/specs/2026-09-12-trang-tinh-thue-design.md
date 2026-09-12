@@ -109,6 +109,12 @@ Phần giao diện chỉ gọi ba hàm trên và vẽ kết quả.
   danh sách kết quả, thông tin hộ đã chọn, bảng tính với ô nhập ngay trong
   bảng, dòng tổng nổi bật, khối đơn giá thu gọn ở cuối.
 - Tiếng Việt toàn bộ.
+- Phục vụ người ít kinh nghiệm dùng máy tính: chữ to (cỡ chữ cơ bản 18px, ô
+  nhập và nút cao tối thiểu 48px), mỗi bước có số thứ tự và câu hướng dẫn ngắn
+  ("Bước 1: Chọn file Excel", "Bước 2: Gõ tên hoặc số CCCD", "Bước 3: Nhập số
+  người"), nút bấm có nhãn rõ nghĩa, không dùng biểu tượng thay chữ, màu tương
+  phản cao, chỉ một hành động chính trên màn hình tại mỗi bước. Bước sau chỉ
+  hiện khi bước trước đã xong để tránh rối.
 
 ## Kiểm thử
 
