@@ -1151,3 +1151,107 @@ Expected: `16 test đạt`, exit 0; `git status` chỉ còn README.md, spec, và
 git add README.md docs/superpowers/specs/2026-09-12-trang-tinh-thue-design.md
 git -c user.name="phucvm3" -c user.email="phucvm3@fpt.com" commit -m "docs: README và cập nhật spec theo cấu trúc file"
 ```
+
+---
+
+### Task 8: Bố cục mới theo yêu cầu người dùng, tối ưu di động
+
+**Files:**
+- Modify: `index.html` (viết lại phần HTML/CSS và các hàm giao diện; giữ nguyên các hàm đọc file, tìm kiếm, đơn giá/localStorage đã có)
+- Modify: `README.md` (mục "Cách dùng")
+
+**Interfaces:**
+- Consumes: `window.Thue.{parseSheetRows, searchInfo, sumThueDat, computeTotals, formatMoney, normalizeText, DEFAULT_RATES}`. Row: `{ mst, ten, ngaySinh, cccd, dienTich, thon, stt, tieuMuc, thuePhaiNop, daNop }`.
+- Produces: trang theo mục "Giao diện" của spec (đã cập nhật), hàm `cungHo(a, b)` đối xứng.
+
+- [ ] **Step 1: Sắp lại bố cục trong `index.html`**
+
+Thứ tự phần tử trong `<main>`:
+
+1. `<h1>Tính tiền thuế cần nộp</h1>` và câu mô tả ngắn.
+2. `<details id="khoiDonGia">` chuyển lên ngay dưới tiêu đề. `<summary>` gồm chữ "Đơn giá" và một `<span id="tomTatDonGia" class="phu-chu">` hiện: `Nghĩa trang {NT} đ/người · Thiên tai {TT} đ/người · Môi trường {MT} đ/người/tháng · {thang} tháng` (định dạng bằng `formatMoney` bỏ hậu tố " đ" hoặc dùng `toLocaleString('vi-VN')`). Cập nhật tóm tắt mỗi khi đơn giá đổi. Nội dung bên trong giữ như cũ (4 ô nhập + "Khôi phục mặc định").
+3. Bước 1 (giữ nguyên).
+4. Bước 2 (giữ nguyên danh sách kết quả, thông báo cắt, hộp không tìm thấy). Bỏ nút "Tính cho N dòng đã chọn"; thay bằng việc hiện Bước 3 ngay khi `daChon.size > 0`, ẩn khi về 0.
+5. Bước 3 `<section id="buoc3">` "Nhập số người":
+   - `<div id="thongTinHo" class="thongtin">` hiện tên hộ và `N dòng đã chọn` (hoặc "Không có dòng nào trong file Excel" khi tính với 0 đ).
+   - Ba nhóm nhập, mỗi nhóm một hàng: nhãn trái, ô số phải (rộng 120px trên máy tính, chiếm hết hàng trên điện thoại):
+     - "Nghĩa trang nhân dân — số người" `#nguoiNghiaTrang`
+     - "Quỹ phòng chống thiên tai — số người" `#nguoiThienTai`
+     - "Bảo vệ môi trường — số người" `#nguoiMoiTruong`, ngay dưới là "Số tháng (chỉ áp dụng cho bảo vệ môi trường)" `#soThang`, mặc định `caiDat.soThang`.
+   - Nút `#nutTinhTien` class `nut nut-lon` chữ "Tính tiền", chiều ngang 100%.
+6. `<section id="hoaDon" class="buoc an">` "Hoá đơn":
+   - Tên hộ, danh sách `<ul id="hdDong">` các dòng sổ bộ đã chọn (mỗi dòng: `STT x · Tiểu mục y · Đã nộp z` nếu có, và số thuế hoặc "không có số thuế").
+   - `<div class="hd-hang">` cho mỗi khoản: bên trái `.hd-ten` (tên khoản) và `.hd-ct` (chi tiết: `15.000 đ × 4 người` / `15.000 đ × 4 người × 6 tháng` / `Cộng N dòng trong sổ bộ`), bên phải `.hd-tien`. Ghi chú thiếu số thuế hiện bằng `.ghichu` dưới tên khoản.
+   - `<div class="hd-hang hd-tong">` "TỔNG CỘNG" + số tiền, cỡ chữ 1.4rem.
+   - Nút "Tính cho hộ khác" `#nutHoKhac`.
+   - Thời điểm tính: `Tính lúc HH:MM dd/mm/yyyy` bằng `.phu-chu`.
+
+CSS bổ sung (mobile-first):
+
+```css
+.nut-lon { width: 100%; font-size: 1.15rem; min-height: 56px; }
+.nhom { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--vien); }
+.nhom label { flex: 1 1 220px; }
+.nhom input { flex: 0 0 120px; text-align: center; }
+.hd-hang { display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--vien); }
+.hd-hang .hd-tien { white-space: nowrap; font-weight: 700; text-align: right; }
+.hd-tong { border-top: 3px solid var(--chu); border-bottom: 0; font-size: 1.4rem; font-weight: 800; }
+@media (max-width: 480px) {
+  main { padding: 12px 10px 40px; }
+  .buoc { padding: 14px; border-radius: 10px; }
+  .nhom input { flex: 1 1 100%; }
+  .ketqua li { flex-wrap: wrap; }
+  .ketqua .tien { width: 100%; text-align: right; }
+  summary { font-size: 1rem; }
+}
+```
+
+Bỏ `<table>` của Bước 3 cũ.
+
+- [ ] **Step 2: Sửa logic JS**
+
+- `cungHo(a, b)` đối xứng:
+
+```js
+function cccdHopLe(c) { const s = String(c || '').trim(); return s !== '' && s !== '0'; }
+function cungHo(a, b) {
+  if (Thue.normalizeText(a.ten) !== Thue.normalizeText(b.ten)) return false;
+  const ca = String(a.cccd || '').trim(), cb = String(b.cccd || '').trim();
+  if (cccdHopLe(ca) && cccdHopLe(cb) && ca === cb) return true;
+  const ma = String(a.mst || '').trim(), mb = String(b.mst || '').trim();
+  return ma !== '' && ma === mb;
+}
+```
+
+- `batTat(h)` như cũ; sau `veKetQua()` gọi `capNhatBuoc3()`: nếu `daChon.size > 0` thì `hoDangChon = { ten: rows[0].ten, rows }` (rows theo thứ tự trong `cacHo`), cập nhật `#thongTinHo`, hiện Bước 3; nếu 0 và không ở chế độ "0 đ" thì ẩn Bước 3 và hoá đơn. Không reset các ô số người khi thay đổi tích (giữ số người đã gõ).
+- `#nutKhongThue` → `hoDangChon = { ten: <chuỗi tìm> || 'Hộ chưa có trong sổ', rows: [] }`, hiện Bước 3, cuộn tới.
+- `#nutTinhTien` → gọi `tinhVaVeHoaDon()`: dùng `Thue.sumThueDat(hoDangChon.rows)` và `Thue.computeTotals(...)` như hiện tại, vẽ hoá đơn, hiện `#hoaDon`, cuộn tới. Không có listener `input` tự tính nữa.
+- `#nutHoKhac` → xoá `daChon`, `hoDangChon = null`, ẩn Bước 3 và hoá đơn, xoá ô tìm, focus ô tìm, cuộn về Bước 2.
+- Đổi đơn giá → cập nhật `#tomTatDonGia`; nếu hoá đơn đang hiện thì vẽ lại hoá đơn với đơn giá mới (gọi `tinhVaVeHoaDon()`).
+- Khi nạp file mới → xoá `daChon`, ẩn Bước 3 và hoá đơn.
+
+- [ ] **Step 3: Kiểm tra trên trình duyệt trong app**
+
+`preview_start` `name: "thue"`, `navigate` `http://localhost:8765/index.html`. Nạp file thật `Thue_dat_PNN_Thon_Thong_Nhat.xlsx` bằng `javascript_tool` (DataTransfer như các task trước). Kiểm tra và ghi lại:
+
+1. Thứ tự khối: Đơn giá (thu gọn, có dòng tóm tắt) → Bước 1 → Bước 2; Bước 3 và Hoá đơn ẩn.
+2. Tìm `pham van yem`, bấm dòng đầu → 4 dòng tích, Bước 3 hiện ngay bên dưới với "4 dòng đã chọn"; Hoá đơn vẫn ẩn.
+3. Nhập 4 / 4 / 4, số tháng 6, bấm "Tính tiền" → Hoá đơn hiện: thuế đất `245.223 đ`, nghĩa trang `60.000 đ`, thiên tai `40.000 đ`, môi trường `360.000 đ`, tổng `705.223 đ`.
+4. Đổi số tháng thành 3 mà không bấm → hoá đơn không đổi; bấm "Tính tiền" → môi trường `180.000 đ`, tổng `525.223 đ`.
+5. Bỏ tích 1 dòng → Bước 3 "3 dòng đã chọn"; bỏ tích hết → Bước 3 và Hoá đơn ẩn.
+6. Gộp hộ đối xứng: tìm `nguyen thi dien` (hộ có CCCD 0, nhiều dòng), bấm lần lượt từng dòng riêng lẻ (bỏ tích rồi bấm dòng khác) → luôn tích đủ các dòng cùng MST.
+7. Mở Đơn giá, đổi nghĩa trang 20000 → tóm tắt đổi, hoá đơn (nếu đang hiện) vẽ lại; "Khôi phục mặc định" trả về.
+8. `resize_window` width 360 height 740 → chụp ảnh; không tràn ngang (`document.documentElement.scrollWidth <= 360`); nút "Tính tiền" và "Chọn file Excel" rộng hết hàng; ô số chiếm hết hàng. Trả về `desktop`.
+9. `read_console_messages` onlyErrors → không có.
+10. Nạp `test/mau.xlsx` → "Đã nạp 11 dòng"; tìm `zzz` → nút "Tính với thuế đất 0 đ" → Bước 3 hiện với "Không có dòng nào trong file Excel"; Tính tiền → thuế đất 0 đ và ghi chú "Không tìm thấy trong file".
+
+- [ ] **Step 4: README**
+
+Sửa mục "Cách dùng" thành 5 bước: (0) kiểm tra đơn giá ở đầu trang, chỉ sửa khi có thay đổi; (1) chọn file; (2) tìm và tích hộ; (3) nhập số người, số tháng chỉ áp dụng cho bảo vệ môi trường, bấm "Tính tiền"; (4) xem hoá đơn ở cuối, bấm "Tính cho hộ khác" để tiếp.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add index.html README.md
+git -c user.name="phucvm3" -c user.email="phucvm3@fpt.com" commit -m "feat: bố cục mới — đơn giá lên đầu, form số người, hoá đơn cuối trang, tối ưu di động"
+```

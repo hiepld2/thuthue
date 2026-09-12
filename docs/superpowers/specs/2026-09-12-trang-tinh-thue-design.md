@@ -123,17 +123,38 @@ Phần giao diện chỉ gọi ba hàm trên và vẽ kết quả.
 
 ## Giao diện
 
-- Một cột, tối đa khoảng 760px, dùng được trên điện thoại.
-- Thứ tự từ trên xuống: tiêu đề trang, chọn file + trạng thái, ô tìm kiếm +
-  danh sách kết quả, thông tin hộ đã chọn, bảng tính với ô nhập ngay trong
-  bảng, dòng tổng nổi bật, khối đơn giá thu gọn ở cuối.
-- Tiếng Việt toàn bộ.
-- Phục vụ người ít kinh nghiệm dùng máy tính: chữ to (cỡ chữ cơ bản 18px, ô
-  nhập và nút cao tối thiểu 48px), mỗi bước có số thứ tự và câu hướng dẫn ngắn
-  ("Bước 1: Chọn file Excel", "Bước 2: Gõ tên hoặc số CCCD", "Bước 3: Nhập số
-  người"), nút bấm có nhãn rõ nghĩa, không dùng biểu tượng thay chữ, màu tương
-  phản cao, chỉ một hành động chính trên màn hình tại mỗi bước. Bước sau chỉ
-  hiện khi bước trước đã xong để tránh rối.
+Thiết kế ưu tiên màn hình điện thoại (mobile-first), một cột, tối đa khoảng
+760px trên máy tính. Thứ tự từ trên xuống:
+
+1. **Tiêu đề trang.**
+2. **Khối "Đơn giá"** (cấu hình đầu tiên, ít thay đổi) dạng `<details>` thu gọn;
+   dòng tóm tắt hiện đơn giá đang dùng, ví dụ "Nghĩa trang 15.000 đ/người ·
+   Thiên tai 10.000 đ/người · Môi trường 15.000 đ/người/tháng · 6 tháng". Mở
+   ra có 4 ô nhập và nút "Khôi phục mặc định". Lưu `localStorage`.
+3. **Bước 1: Chọn file Excel** + dòng trạng thái.
+4. **Bước 2: Tìm hộ**: ô tìm, danh sách kết quả có ô tích (tên, STT, tiểu mục,
+   ngày sinh, CCCD, thôn, diện tích, đã nộp, thuế), thông báo cắt 50, hộp
+   "Không tìm thấy trong file" + nút "Tính với thuế đất 0 đ".
+5. **Bước 3: Nhập số người** — hiện ngay bên dưới khi đã tích ít nhất một dòng
+   (hoặc bấm "Tính với thuế đất 0 đ"). Gồm: tên hộ và số dòng đã chọn; ba ô số
+   người (nghĩa trang, phòng chống thiên tai, bảo vệ môi trường); ô "Số tháng"
+   đặt ngay cạnh ô môi trường với nhãn "chỉ áp dụng cho bảo vệ môi trường",
+   mặc định theo đơn giá; nút lớn "Tính tiền".
+6. **Hoá đơn** — chỉ hiện sau khi bấm "Tính tiền": tên hộ; các dòng sổ bộ đã
+   chọn (STT, tiểu mục, đã nộp, thuế); bốn khoản, mỗi khoản một hàng gồm tên,
+   cách tính và số tiền căn phải; hàng "TỔNG CỘNG" nổi bật; nút "Tính cho hộ
+   khác" quay về Bước 2 và xoá lựa chọn. Bấm "Tính tiền" lần nữa thì vẽ lại
+   hoá đơn theo số liệu mới; không tự tính khi gõ.
+
+Quy tắc gộp hộ (đối xứng): hai dòng cùng hộ khi tên chuẩn hoá bằng nhau và
+(CCCD hợp lệ bằng nhau, hoặc MST khác rỗng bằng nhau). CCCD hợp lệ là khác rỗng
+và khác "0".
+
+Yêu cầu chung: tiếng Việt toàn bộ; cỡ chữ cơ bản 18px; ô nhập và nút cao tối
+thiểu 48px, trên điện thoại nút "Tính tiền" và "Chọn file Excel" chiếm hết
+chiều ngang; `inputmode="numeric"` cho ô số; không dùng `<table>` cho hoá đơn
+(dùng hàng flex để không tràn ngang); không tràn ngang ở bề rộng 360px; màu
+tương phản cao; bước sau chỉ hiện khi bước trước xong.
 
 ## Kiểm thử
 
