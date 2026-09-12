@@ -33,6 +33,7 @@
   .trangthai.loi { background: var(--loi-nen); color: var(--loi); }
   .ketqua { list-style: none; margin: 12px 0 0; padding: 0; border: 1px solid var(--vien); border-radius: 10px; overflow: hidden; }
   .ketqua li { display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-top: 1px solid var(--vien); cursor: pointer; }
+  .ketqua li:focus-visible { outline: 3px solid #9cc4ee; outline-offset: -3px; }
   .ketqua li:first-child { border-top: 0; }
   .ketqua li:hover { background: var(--nhan); }
   .ketqua li.chon { background: var(--nhan); }
@@ -82,7 +83,7 @@
     <ul id="dsKetQua" class="ketqua an"></ul>
     <div id="thanhChon" class="hang-nut an"><button type="button" class="nut" id="nutTinh">Tính cho 0 dòng đã chọn</button></div>
     <div id="khongThay" class="trangthai loi an">
-      Không tìm thấy trong file.
+      Không tìm thấy trong file
       <div class="hang-nut"><button type="button" class="nut phu" id="nutKhongThue">Tính với thuế đất 0 đ</button></div>
     </div>
   </section>
@@ -111,7 +112,7 @@
         </tr>
         <tr>
           <td>Bảo vệ môi trường<div class="chitiet" id="ctMoiTruong"></div>
-            <div class="chitiet" style="margin-top:6px">Số tháng: <input type="number" id="soThang" min="0" step="1" value="6" inputmode="numeric" style="width:80px;min-height:40px;text-align:center"></div>
+            <div class="chitiet" style="margin-top:6px">Số tháng: <input type="number" id="soThang" min="0" step="1" value="6" inputmode="numeric" style="width:90px;min-height:48px;text-align:center"></div>
           </td>
           <td class="nhap"><input type="number" id="nguoiMoiTruong" min="0" step="1" value="0" inputmode="numeric"></td>
           <td class="tien" id="tienMoiTruong">0 đ</td>
@@ -220,6 +221,7 @@
   // ---- Bước 2: tìm và chọn nhiều dòng ----
   const daChon = new Set(); // các bản ghi (object trong cacHo) đang được tích
   let ketQuaHienTai = [];
+  let dongCanFocus = null;
 
   function moTaDong(h) {
     return [h.ngaySinh && `Sinh ${h.ngaySinh}`, h.cccd && `CCCD ${h.cccd}`, h.thon, h.dienTich && `${h.dienTich} m²`]
@@ -239,9 +241,14 @@
   function veKetQua() {
     const ds = $('dsKetQua');
     ds.innerHTML = '';
+    let liCanFocus = null;
     for (const h of ketQuaHienTai) {
       const li = document.createElement('li');
       if (daChon.has(h)) li.classList.add('chon');
+      li.tabIndex = 0;
+      li.setAttribute('role', 'checkbox');
+      li.setAttribute('aria-checked', daChon.has(h) ? 'true' : 'false');
+      li.setAttribute('aria-label', h.ten + (moTaDong(h) ? ', ' + moTaDong(h) : ''));
       const cb = document.createElement('input');
       cb.type = 'checkbox'; cb.checked = daChon.has(h); cb.tabIndex = -1;
       const nd = document.createElement('div');
@@ -254,12 +261,17 @@
       tien.textContent = h.thuePhaiNop === null ? 'Không có số thuế' : Thue.formatMoney(h.thuePhaiNop);
       li.append(cb, nd, tien);
       li.addEventListener('click', () => batTat(h));
+      li.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); batTat(h); } });
+      if (dongCanFocus === h) liCanFocus = li;
       ds.appendChild(li);
     }
     hien('dsKetQua');
     capNhatNutTinh();
+    if (liCanFocus) liCanFocus.focus();
+    dongCanFocus = null;
   }
   function batTat(h) {
+    dongCanFocus = h;
     if (daChon.has(h)) {
       daChon.delete(h);
     } else {
