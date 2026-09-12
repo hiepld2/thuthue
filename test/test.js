@@ -40,4 +40,63 @@ test('DEFAULT_RATES đúng theo spec', () => {
   assert.deepEqual(T.DEFAULT_RATES, { nghiaTrang: 15000, thienTai: 10000, moiTruong: 15000, soThang: 6 });
 });
 
+// --- parseSheetRows ---
+const HEADER = ['STT', 'MST', 'Tên NNT', 'Ngày sinh', 'Số CCCD', 'Diện tích', 'Đoạn đường', 'Giá đất',
+  'Mã phi nông nghiệp', 'Thôn/Tổ', 'Tiểu mục', 'Số thuế kỳ trước chuyển sang', 'Số phát sinh trong kỳ',
+  'Số truy thu năm trước', 'Thuế miễn giảm', 'Tổng số thuế phải nộp', 'Số tiền đã nộp', 'Chuyển kỳ sau', 'Ghi chú'];
+const NUMROW = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
+function row(stt, mst, ten, ns, cccd, dt, thon, phaiNop) {
+  return [stt, mst, ten, ns, cccd, dt, 'Các trục đường có mặt cắt dưới 2,5m', 900000,
+    '1019031264', thon, 1601, '', '', '', '', phaiNop, '', '', ''];
+}
+
+test('parseSheetRows tìm tiêu đề sau dòng trống và bỏ dòng số thứ tự cột', () => {
+  const m = [
+    ['SỔ BỘ THUẾ SỬ DỤNG ĐẤT PHI NÔNG NGHIỆP'],
+    [],
+    HEADER,
+    NUMROW,
+    row(177, '8220707543', 'LÊ VĂN AN', '04/06/1936', '145665829', 200, 'Thôn Thống Nhất', '54.000'),
+    row(343, '8220708963', 'NGUYỄN VĂN AN', '18/04/1962', '011618238', 325, 'Thôn Thống Nhất', 234000),
+    [],
+  ];
+  const r = T.parseSheetRows(m);
+  assert.equal(r.ok, true);
+  assert.equal(r.headerRowIndex, 2);
+  assert.equal(r.rows.length, 2);
+  assert.deepEqual(r.rows[0], {
+    mst: '8220707543', ten: 'LÊ VĂN AN', ngaySinh: '04/06/1936', cccd: '145665829',
+    dienTich: '200', thon: 'Thôn Thống Nhất', thuePhaiNop: 54000,
+  });
+  assert.equal(r.rows[1].thuePhaiNop, 234000);
+});
+
+test('parseSheetRows: ô thuế trống thành null, CCCD giữ số 0 đầu', () => {
+  const m = [HEADER, row(1, '8220707021', 'NGUYỄN CHIẾN BINH', '25/04/1959', '030509004203', 60, 'Thôn A', '')];
+  const r = T.parseSheetRows(m);
+  assert.equal(r.ok, true);
+  assert.equal(r.rows[0].thuePhaiNop, null);
+  assert.equal(r.rows[0].cccd, '030509004203');
+});
+
+test('parseSheetRows: không có tiêu đề', () => {
+  const r = T.parseSheetRows([['a', 'b'], [1, 2]]);
+  assert.equal(r.ok, false);
+  assert.equal(r.error, 'Không tìm thấy dòng tiêu đề (cần có cột MST và Tên NNT).');
+});
+
+test('parseSheetRows: thiếu cột bắt buộc', () => {
+  const r = T.parseSheetRows([['STT', 'MST', 'Tên NNT', 'Ngày sinh'], [1, 'x', 'A', '1/1/1970']]);
+  assert.equal(r.ok, false);
+  assert.deepEqual(r.missingColumns, ['Số CCCD', 'Tổng số thuế phải nộp']);
+  assert.equal(r.error, 'Thiếu cột: Số CCCD, Tổng số thuế phải nộp');
+});
+
+test('parseSheetRows: dòng không có tên bị bỏ qua, CCCD số được đổi sang chuỗi', () => {
+  const m = [HEADER, row(1, 'm', '', '', '1', 1, 't', 1), row(2, 'm2', 'B', '', 145266887, 1, 't', 2)];
+  const r = T.parseSheetRows(m);
+  assert.equal(r.rows.length, 1);
+  assert.equal(r.rows[0].cccd, '145266887');
+});
+
 console.log(`\n${passed} test đạt`);
