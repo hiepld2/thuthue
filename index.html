@@ -50,6 +50,13 @@
   .ghichu { display: inline-block; margin-top: 4px; padding: 2px 8px; border-radius: 6px; background: var(--vang-nen); font-size: .85rem; }
   details { border: 1px dashed var(--vien); border-radius: 12px; padding: 12px 18px; background: var(--the); margin-bottom: 18px; }
   summary { cursor: pointer; font-weight: 700; min-height: 32px; }
+  .buoc summary { display: flex; align-items: center; gap: 8px; list-style: none; }
+  .buoc summary::-webkit-details-marker { display: none; }
+  .buoc summary::before { content: '▸'; flex: none; color: var(--mo); }
+  .buoc[open] summary::before { content: '▾'; }
+  .buoc summary h2 { display: flex; margin: 0; flex-wrap: wrap; }
+  .buoc summary .phu-chu { font-weight: 400; }
+  .buoc[open] summary { margin-bottom: 12px; }
   .dongia { display: grid; grid-template-columns: 1fr 160px; gap: 10px 14px; align-items: center; margin-top: 12px; }
   .an { display: none !important; }
   .hang-nut { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
@@ -93,14 +100,14 @@
   </details>
 
   <!-- Bước 1 -->
-  <section class="buoc" id="buoc1">
-    <h2><span class="so">1</span> Chọn file Excel sổ bộ thuế</h2>
+  <details class="buoc" id="buoc1" open>
+    <summary><h2><span class="so">1</span> Chọn file Excel sổ bộ thuế <span id="tomTatFile" class="phu-chu"></span></h2></summary>
     <p class="huongdan">Bấm nút bên dưới rồi chọn file Excel (.xlsx hoặc .xls) trên máy. Trang sẽ nhớ file này trên trình duyệt cho lần sau.</p>
     <label class="nut nut-lon" for="fileExcel" role="button" tabindex="0">Chọn file Excel</label>
     <input type="file" id="fileExcel" accept=".xlsx,.xls">
     <div id="trangThaiFile" class="trangthai an"></div>
     <div id="daLuu" class="hang-nut an"><button type="button" class="nut phu" id="nutChonKhac">Chọn file khác</button><button type="button" class="nut phu" id="nutXoaLuu">Xoá dữ liệu đã lưu</button></div>
-  </section>
+  </details>
 
   <!-- Bước 2 -->
   <section class="buoc an" id="buoc2">
@@ -256,6 +263,8 @@
     const chu = `Đang dùng file "${tenFile}", nạp lúc ${dinhDangLuc(luuLuc)}, ${rows.length} dòng.`;
     baoFile('ok', daLuuOk ? chu : chu + ' Không lưu được vào trình duyệt, lần sau cần chọn file lại.');
     hien('daLuu'); hien('buoc2'); $('oTim').value = ''; timKiem();
+    $('tomTatFile').textContent = `— ${tenFile}, ${rows.length} dòng`;
+    $('buoc1').open = false;
   }
 
   $('fileExcel').addEventListener('change', async ev => {
@@ -281,6 +290,7 @@
   $('nutXoaLuu').addEventListener('click', () => {
     xoaData(); cacHo = []; daChon.clear(); hoDangChon = null;
     an('daLuu'); an('buoc2'); an('buoc3'); an('hoaDon');
+    $('tomTatFile').textContent = ''; $('buoc1').open = true;
     baoFile('ok', 'Đã xoá dữ liệu đã lưu. Hãy chọn file Excel.');
   });
   // Cho phép bấm Enter/Space trên nhãn "Chọn file Excel"

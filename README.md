@@ -12,7 +12,8 @@ phòng chống thiên tai, bảo vệ môi trường.
    File chỉ được đọc trên máy bạn, không gửi đi đâu. Trang sẽ nhớ file này trên
    trình duyệt: lần sau mở lại trang, dữ liệu tự nạp lại mà không cần chọn file.
    Bấm **Chọn file khác** để nạp file khác, hoặc **Xoá dữ liệu đã lưu** để xoá
-   dữ liệu đang được nhớ trên trình duyệt.
+   dữ liệu đang được nhớ trên trình duyệt. Khi đã có dữ liệu, khối này tự thu gọn
+   (giống khối Đơn giá); bấm vào tiêu đề để mở lại.
 2. Bước 2: gõ tên hoặc số CCCD, bấm vào hộ cần tính.
    Một hộ có thể có nhiều dòng (nhiều thửa đất hoặc khoản thu, ví dụ tiền chậm nộp); bấm một dòng sẽ tự tích các dòng cùng hộ, bạn có thể bỏ tích dòng không cần. Bước 3 hiện ngay bên dưới khi có ít nhất một dòng được tích.
 3. Bước 3: nhập số người cho từng khoản (nghĩa trang, phòng chống thiên tai,
