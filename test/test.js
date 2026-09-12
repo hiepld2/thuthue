@@ -43,7 +43,7 @@ test('formatMoney: giá trị không hữu hạn coi là 0', () => {
 
 // --- DEFAULT_RATES ---
 test('DEFAULT_RATES đúng theo spec', () => {
-  assert.deepEqual(T.DEFAULT_RATES, { nghiaTrang: 15000, thienTai: 10000, moiTruong: 15000, soThang: 6 });
+  assert.deepEqual(T.DEFAULT_RATES, { nghiaTrang: 15000, thienTai: 10000, moiTruong: 10000, soThang: 6 });
 });
 
 // --- parseSheetRows ---
@@ -200,10 +200,10 @@ test('computeTotals tính đủ 4 dòng và tổng', () => {
   assert.equal(r.lines[0].amount, 54000);
   assert.equal(r.lines[1].amount, 60000);   // 15000 × 4
   assert.equal(r.lines[2].amount, 30000);   // 10000 × 3
-  assert.equal(r.lines[3].amount, 360000);  // 15000 × 4 × 6
-  assert.equal(r.total, 504000);
+  assert.equal(r.lines[3].amount, 240000);  // 10000 × 4 × 6
+  assert.equal(r.total, 384000);
   assert.equal(r.lines[1].detail, '15.000 đ × 4 người');
-  assert.equal(r.lines[3].detail, '15.000 đ × 4 người × 6 tháng');
+  assert.equal(r.lines[3].detail, '10.000 đ × 4 người × 6 tháng');
   assert.equal(r.lines[0].note, undefined);
 });
 

@@ -5,7 +5,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  const DEFAULT_RATES = { nghiaTrang: 15000, thienTai: 10000, moiTruong: 15000, soThang: 6 };
+  const DEFAULT_RATES = { nghiaTrang: 15000, thienTai: 10000, moiTruong: 10000, soThang: 6 };
 
   function normalizeText(s) {
     if (s === null || s === undefined) return '';

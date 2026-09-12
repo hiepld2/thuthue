@@ -97,7 +97,7 @@ Phần giao diện chỉ gọi ba hàm trên và vẽ kết quả.
 | Tổng cộng | tổng 4 dòng | |
 
 - Đơn giá mặc định: nghĩa trang 15.000; phòng chống thiên tai 10.000; bảo vệ
-  môi trường 15.000 đ/người/tháng; số tháng mặc định 6.
+  môi trường 10.000 đ/người/tháng; số tháng mặc định 6.
 - Số người mặc định 0, số nguyên không âm. Số tháng số nguyên không âm.
 - Nếu hộ được chọn có `thuePhaiNop` là `null`, hiện ghi chú "Không tìm thấy
   trong file" trên dòng thuế đất và lấy 0 đ.
@@ -136,7 +136,7 @@ Thiết kế ưu tiên màn hình điện thoại (mobile-first), một cột, t
 1. **Tiêu đề trang.**
 2. **Khối "Đơn giá"** (cấu hình đầu tiên, ít thay đổi) dạng `<details>` thu gọn;
    dòng tóm tắt hiện đơn giá đang dùng, ví dụ "Nghĩa trang 15.000 đ/người ·
-   Thiên tai 10.000 đ/người · Môi trường 15.000 đ/người/tháng · 6 tháng". Mở
+   Thiên tai 10.000 đ/người · Môi trường 10.000 đ/người/tháng · 6 tháng". Mở
    ra có 4 ô nhập và nút "Khôi phục mặc định". Lưu `localStorage`.
 3. **Bước 1: Chọn file Excel** + dòng trạng thái.
 4. **Bước 2: Tìm hộ**: ô tìm, danh sách kết quả có ô tích (tên, STT, tiểu mục,
