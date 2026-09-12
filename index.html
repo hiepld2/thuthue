@@ -47,32 +47,52 @@
   .thongtin .ten { font-size: 1.2rem; font-weight: 700; }
   .thongtin ul { margin: 8px 0 0; padding-left: 22px; }
   .thongtin li { margin: 2px 0; }
-  table { width: 100%; border-collapse: collapse; }
-  th, td { padding: 12px 8px; border-bottom: 1px solid var(--vien); text-align: left; vertical-align: middle; }
-  th { color: var(--mo); font-weight: 600; font-size: .9rem; }
-  td.tien, th.tien { text-align: right; white-space: nowrap; font-weight: 700; }
-  td.nhap input { width: 110px; text-align: center; }
-  .chitiet { color: var(--mo); font-size: .9rem; }
   .ghichu { display: inline-block; margin-top: 4px; padding: 2px 8px; border-radius: 6px; background: var(--vang-nen); font-size: .85rem; }
-  tr.tong td { border-bottom: 0; border-top: 3px solid var(--chu); font-size: 1.35rem; font-weight: 800; padding-top: 16px; }
-  details { border: 1px dashed var(--vien); border-radius: 12px; padding: 12px 18px; background: var(--the); }
+  details { border: 1px dashed var(--vien); border-radius: 12px; padding: 12px 18px; background: var(--the); margin-bottom: 18px; }
   summary { cursor: pointer; font-weight: 700; min-height: 32px; }
   .dongia { display: grid; grid-template-columns: 1fr 160px; gap: 10px 14px; align-items: center; margin-top: 12px; }
   .an { display: none !important; }
   .hang-nut { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
   input[type=file] { display: none; }
+  .nut-lon { width: 100%; font-size: 1.15rem; min-height: 56px; }
+  .nhom { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--vien); }
+  .nhom label { flex: 1 1 220px; }
+  .nhom input { flex: 0 0 120px; text-align: center; }
+  .hd-hang { display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--vien); }
+  .hd-hang .hd-tien { white-space: nowrap; font-weight: 700; text-align: right; }
+  .hd-tong { border-top: 3px solid var(--chu); border-bottom: 0; font-size: 1.4rem; font-weight: 800; }
+  @media (max-width: 480px) {
+    main { padding: 12px 10px 40px; }
+    .buoc { padding: 14px; border-radius: 10px; }
+    .nhom input { flex: 1 1 100%; }
+    .ketqua li { flex-wrap: wrap; }
+    .ketqua .tien { width: 100%; text-align: right; }
+    summary { font-size: 1rem; }
+  }
 </style>
 </head>
 <body>
 <main>
   <h1>Tính tiền thuế cần nộp</h1>
-  <p class="mo">Làm theo 3 bước từ trên xuống dưới.</p>
+  <p class="mo">Làm theo các bước từ trên xuống dưới.</p>
+
+  <!-- Đơn giá -->
+  <details id="khoiDonGia">
+    <summary>Đơn giá <span id="tomTatDonGia" class="phu-chu"></span></summary>
+    <div class="dongia">
+      <label for="giaNghiaTrang">Nghĩa trang nhân dân (đ/người)</label><input type="number" id="giaNghiaTrang" min="0" step="1000" inputmode="numeric">
+      <label for="giaThienTai">Quỹ phòng chống thiên tai (đ/người)</label><input type="number" id="giaThienTai" min="0" step="1000" inputmode="numeric">
+      <label for="giaMoiTruong">Bảo vệ môi trường (đ/người/tháng)</label><input type="number" id="giaMoiTruong" min="0" step="1000" inputmode="numeric">
+      <label for="thangMacDinh">Số tháng mặc định</label><input type="number" id="thangMacDinh" min="0" step="1" inputmode="numeric">
+    </div>
+    <div class="hang-nut"><button type="button" class="nut phu" id="nutMacDinh">Khôi phục mặc định</button></div>
+  </details>
 
   <!-- Bước 1 -->
   <section class="buoc" id="buoc1">
     <h2><span class="so">1</span> Chọn file Excel sổ bộ thuế</h2>
     <p class="huongdan">Bấm nút bên dưới rồi chọn file Excel (.xlsx hoặc .xls) trên máy.</p>
-    <label class="nut" for="fileExcel" role="button" tabindex="0">Chọn file Excel</label>
+    <label class="nut nut-lon" for="fileExcel" role="button" tabindex="0">Chọn file Excel</label>
     <input type="file" id="fileExcel" accept=".xlsx,.xls">
     <div id="trangThaiFile" class="trangthai an"></div>
   </section>
@@ -85,7 +105,6 @@
     <input type="text" id="oTim" placeholder="Ví dụ: Lê Văn An hoặc 145665829" autocomplete="off">
     <ul id="dsKetQua" class="ketqua an"></ul>
     <div id="thongBaoCat" class="trangthai an"></div>
-    <div id="thanhChon" class="hang-nut an"><button type="button" class="nut" id="nutTinh">Tính cho 0 dòng đã chọn</button></div>
     <div id="khongThay" class="trangthai loi an">
       Không tìm thấy trong file
       <div class="hang-nut"><button type="button" class="nut phu" id="nutKhongThue">Tính với thuế đất 0 đ</button></div>
@@ -94,50 +113,39 @@
 
   <!-- Bước 3 -->
   <section class="buoc an" id="buoc3">
-    <h2><span class="so">3</span> Nhập số người và xem tổng tiền</h2>
+    <h2><span class="so">3</span> Nhập số người</h2>
     <div class="thongtin" id="thongTinHo"></div>
-    <table>
-      <thead><tr><th>Khoản thu</th><th>Số người</th><th class="tien">Số tiền</th></tr></thead>
-      <tbody>
-        <tr>
-          <td>Thuế sử dụng đất phi nông nghiệp<div class="chitiet" id="ctThueDat">Theo sổ bộ thuế</div><span id="ghiChuThueDat" class="ghichu an"></span></td>
-          <td></td>
-          <td class="tien" id="tienThueDat">0 đ</td>
-        </tr>
-        <tr>
-          <td>Nghĩa trang nhân dân<div class="chitiet" id="ctNghiaTrang"></div></td>
-          <td class="nhap"><input type="number" id="nguoiNghiaTrang" min="0" step="1" value="0" inputmode="numeric"></td>
-          <td class="tien" id="tienNghiaTrang">0 đ</td>
-        </tr>
-        <tr>
-          <td>Quỹ phòng chống thiên tai<div class="chitiet" id="ctThienTai"></div></td>
-          <td class="nhap"><input type="number" id="nguoiThienTai" min="0" step="1" value="0" inputmode="numeric"></td>
-          <td class="tien" id="tienThienTai">0 đ</td>
-        </tr>
-        <tr>
-          <td>Bảo vệ môi trường<div class="chitiet" id="ctMoiTruong"></div>
-            <div class="chitiet" style="margin-top:6px">Số tháng: <input type="number" id="soThang" min="0" step="1" value="6" inputmode="numeric" style="width:90px;min-height:48px;text-align:center"></div>
-          </td>
-          <td class="nhap"><input type="number" id="nguoiMoiTruong" min="0" step="1" value="0" inputmode="numeric"></td>
-          <td class="tien" id="tienMoiTruong">0 đ</td>
-        </tr>
-        <tr class="tong"><td colspan="2">TỔNG CỘNG</td><td class="tien" id="tienTong">0 đ</td></tr>
-      </tbody>
-    </table>
-    <div class="hang-nut"><button type="button" class="nut phu" id="nutHoKhac">Tính cho hộ khác</button></div>
+    <div class="nhom">
+      <label for="nguoiNghiaTrang">Nghĩa trang nhân dân — số người</label>
+      <input type="number" id="nguoiNghiaTrang" min="0" step="1" value="0" inputmode="numeric">
+    </div>
+    <div class="nhom">
+      <label for="nguoiThienTai">Quỹ phòng chống thiên tai — số người</label>
+      <input type="number" id="nguoiThienTai" min="0" step="1" value="0" inputmode="numeric">
+    </div>
+    <div class="nhom">
+      <label for="nguoiMoiTruong">Bảo vệ môi trường — số người</label>
+      <input type="number" id="nguoiMoiTruong" min="0" step="1" value="0" inputmode="numeric">
+    </div>
+    <div class="nhom">
+      <label for="soThang">Số tháng (chỉ áp dụng cho bảo vệ môi trường)</label>
+      <input type="number" id="soThang" min="0" step="1" value="6" inputmode="numeric">
+    </div>
+    <div class="hang-nut"><button type="button" class="nut nut-lon" id="nutTinhTien">Tính tiền</button></div>
   </section>
 
-  <!-- Đơn giá -->
-  <details id="khoiDonGia">
-    <summary>Đơn giá (chỉ sửa khi có thay đổi)</summary>
-    <div class="dongia">
-      <label for="giaNghiaTrang">Nghĩa trang nhân dân (đ/người)</label><input type="number" id="giaNghiaTrang" min="0" step="1000" inputmode="numeric">
-      <label for="giaThienTai">Quỹ phòng chống thiên tai (đ/người)</label><input type="number" id="giaThienTai" min="0" step="1000" inputmode="numeric">
-      <label for="giaMoiTruong">Bảo vệ môi trường (đ/người/tháng)</label><input type="number" id="giaMoiTruong" min="0" step="1000" inputmode="numeric">
-      <label for="thangMacDinh">Số tháng mặc định</label><input type="number" id="thangMacDinh" min="0" step="1" inputmode="numeric">
+  <!-- Hoá đơn -->
+  <section class="buoc an" id="hoaDon">
+    <h2>Hoá đơn</h2>
+    <div class="thongtin" id="hdThongTin">
+      <div class="ten" id="hdTen"></div>
+      <ul id="hdDong"></ul>
     </div>
-    <div class="hang-nut"><button type="button" class="nut phu" id="nutMacDinh">Khôi phục mặc định</button></div>
-  </details>
+    <div id="hdKhoan"></div>
+    <div class="hd-hang hd-tong"><div>TỔNG CỘNG</div><div class="hd-tien" id="hdTong">0 đ</div></div>
+    <p class="phu-chu" id="hdThoiDiem"></p>
+    <div class="hang-nut"><button type="button" class="nut phu" id="nutHoKhac">Tính cho hộ khác</button></div>
+  </section>
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -190,16 +198,24 @@
     $('giaMoiTruong').value = cd.moiTruong;
     $('thangMacDinh').value = cd.soThang;
   }
+  function capNhatTomTat() {
+    const s = n => Number(n).toLocaleString('vi-VN');
+    $('tomTatDonGia').textContent =
+      `Nghĩa trang ${s(caiDat.nghiaTrang)} đ/người · Thiên tai ${s(caiDat.thienTai)} đ/người · Môi trường ${s(caiDat.moiTruong)} đ/người/tháng · ${s(caiDat.soThang)} tháng`;
+  }
   let caiDat = docCaiDat();
   doCaiDatVaoForm(caiDat);
-  $('soThang').value = caiDat.soThang;
+  capNhatTomTat();
   for (const id of ['giaNghiaTrang', 'giaThienTai', 'giaMoiTruong', 'thangMacDinh']) {
-    $(id).addEventListener('input', () => { caiDat = layCaiDatTuForm(); luuCaiDat(caiDat); tinhLai(); });
+    $(id).addEventListener('input', () => {
+      caiDat = layCaiDatTuForm(); luuCaiDat(caiDat); capNhatTomTat();
+      if (!$('hoaDon').classList.contains('an')) tinhVaVeHoaDon();
+    });
   }
   $('nutMacDinh').addEventListener('click', () => {
     caiDat = Object.assign({}, Thue.DEFAULT_RATES);
-    doCaiDatVaoForm(caiDat); luuCaiDat(caiDat);
-    $('soThang').value = caiDat.soThang; tinhLai();
+    doCaiDatVaoForm(caiDat); luuCaiDat(caiDat); capNhatTomTat();
+    if (!$('hoaDon').classList.contains('an')) tinhVaVeHoaDon();
   });
 
   // ---- Bước 1: đọc file ----
@@ -213,7 +229,7 @@
   $('fileExcel').addEventListener('change', async ev => {
     const f = ev.target.files && ev.target.files[0];
     if (!f) return;
-    an('buoc2'); an('buoc3'); cacHo = []; daChon.clear();
+    an('buoc2'); an('buoc3'); an('hoaDon'); cacHo = []; daChon.clear(); hoDangChon = null;
     try {
       const buf = await f.arrayBuffer();
       const wb = XLSX.read(buf, { type: 'array', cellDates: true });
@@ -250,20 +266,13 @@
       h.daNop > 0 && `Đã nộp ${Thue.formatMoney(h.daNop)}`,
     ].filter(Boolean).join(' · ');
   }
+  function cccdHopLe(c) { const s = String(c || '').trim(); return s !== '' && s !== '0'; }
   function cungHo(a, b) {
     if (Thue.normalizeText(a.ten) !== Thue.normalizeText(b.ten)) return false;
-    const cccdA = String(a.cccd || '').trim();
-    const cccdB = String(b.cccd || '').trim();
-    if (cccdA && cccdA !== '0') return cccdA === cccdB;
-    // CCCD rỗng hoặc "0": khớp theo MST nếu có
-    const mstA = String(a.mst || '').trim();
-    return !!mstA && mstA === String(b.mst || '').trim();
-  }
-  function capNhatNutTinh() {
-    const n = daChon.size;
-    $('nutTinh').textContent = `Tính cho ${n} dòng đã chọn`;
-    $('nutTinh').disabled = n === 0;
-    if (ketQuaHienTai.length) hien('thanhChon'); else an('thanhChon');
+    const ca = String(a.cccd || '').trim(), cb = String(b.cccd || '').trim();
+    if (cccdHopLe(ca) && cccdHopLe(cb) && ca === cb) return true;
+    const ma = String(a.mst || '').trim(), mb = String(b.mst || '').trim();
+    return ma !== '' && ma === mb;
   }
   function veKetQua() {
     const ds = $('dsKetQua');
@@ -293,7 +302,7 @@
       ds.appendChild(li);
     }
     hien('dsKetQua');
-    capNhatNutTinh();
+    capNhatBuoc3();
     if (liCanFocus) liCanFocus.focus();
     dongCanFocus = null;
   }
@@ -303,7 +312,7 @@
       daChon.delete(h);
     } else {
       daChon.add(h);
-      // tự tích các dòng khác của cùng hộ (cùng CCCD hợp lệ và cùng tên)
+      // tự tích các dòng khác của cùng hộ (cùng CCCD hợp lệ và cùng tên, hoặc cùng MST)
       for (const k of cacHo) if (k !== h && cungHo(h, k)) daChon.add(k);
     }
     veKetQua();
@@ -312,8 +321,8 @@
     const q = $('oTim').value;
     const info = Thue.searchInfo(cacHo, q, 50);
     ketQuaHienTai = info.rows;
-    if (!q.trim()) { ketQuaHienTai = []; an('dsKetQua'); an('khongThay'); an('thanhChon'); an('thongBaoCat'); return; }
-    if (ketQuaHienTai.length === 0) { an('dsKetQua'); an('thanhChon'); an('thongBaoCat'); hien('khongThay'); return; }
+    if (!q.trim()) { ketQuaHienTai = []; an('dsKetQua'); an('khongThay'); an('thongBaoCat'); return; }
+    if (ketQuaHienTai.length === 0) { an('dsKetQua'); an('thongBaoCat'); hien('khongThay'); return; }
     an('khongThay');
     if (info.total > ketQuaHienTai.length) {
       $('thongBaoCat').textContent = `Đang hiện ${ketQuaHienTai.length} kết quả đầu trong ${info.total}. Hãy gõ thêm tên hoặc số CCCD để thu hẹp.`;
@@ -324,40 +333,47 @@
     veKetQua();
   }
   $('oTim').addEventListener('input', timKiem);
-  $('nutTinh').addEventListener('click', () => {
-    if (daChon.size === 0) return;
-    const rows = cacHo.filter(h => daChon.has(h)); // giữ thứ tự trong file
-    chonHo({ ten: rows[0].ten, rows });
-  });
   $('nutKhongThue').addEventListener('click', () => {
     chonHo({ ten: $('oTim').value.trim() || 'Hộ chưa có trong sổ', rows: [] });
   });
 
-  // ---- Bước 3: tính ----
+  // ---- Bước 3: hiện form khi có dòng được chọn ----
   let hoDangChon = null; // { ten, rows }
-  function chonHo(ho) {
+  function capNhatBuoc3() {
+    if (daChon.size > 0) {
+      const rows = cacHo.filter(h => daChon.has(h)); // giữ thứ tự trong file
+      chonHo({ ten: rows[0].ten, rows }, true);
+    } else if (hoDangChon === null || hoDangChon.rows.length > 0) {
+      an('buoc3'); an('hoaDon'); hoDangChon = null;
+    }
+  }
+  function chonHo(ho, giuSoNguoi) {
     hoDangChon = ho;
     const tt = $('thongTinHo');
-    tt.innerHTML = '<div class="ten"></div><div class="phu-chu" id="soDong"></div><ul id="dsDaChon"></ul>';
+    tt.innerHTML = '<div class="ten"></div><div class="phu-chu" id="soDong"></div>';
     tt.querySelector('.ten').textContent = ho.ten;
-    const ul = tt.querySelector('#dsDaChon');
     if (ho.rows.length === 0) {
-      tt.querySelector('#soDong').textContent = 'Không có dòng nào trong file Excel.';
+      tt.querySelector('#soDong').textContent = 'Không có dòng nào trong file Excel';
     } else {
-      tt.querySelector('#soDong').textContent = ho.rows.length === 1 ? '1 dòng trong sổ bộ:' : `${ho.rows.length} dòng trong sổ bộ (cộng dồn thuế đất):`;
-      for (const h of ho.rows) {
-        const li = document.createElement('li');
-        li.textContent = `${moTaDong(h) || h.ten} — ${h.thuePhaiNop === null ? 'không có số thuế' : Thue.formatMoney(h.thuePhaiNop)}`;
-        ul.appendChild(li);
-      }
+      tt.querySelector('#soDong').textContent = ho.rows.length === 1 ? '1 dòng đã chọn' : `${ho.rows.length} dòng đã chọn`;
     }
-    $('nguoiNghiaTrang').value = 0; $('nguoiThienTai').value = 0; $('nguoiMoiTruong').value = 0;
-    $('soThang').value = caiDat.soThang;
-    hien('buoc3'); tinhLai();
-    $('buoc3').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    $('nguoiNghiaTrang').focus();
+    if (!giuSoNguoi) {
+      $('nguoiNghiaTrang').value = 0; $('nguoiThienTai').value = 0; $('nguoiMoiTruong').value = 0;
+      $('soThang').value = caiDat.soThang;
+    }
+    const dangHien = !$('buoc3').classList.contains('an');
+    hien('buoc3');
+    if (!dangHien) {
+      $('buoc3').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      $('nguoiNghiaTrang').focus();
+    }
   }
-  function tinhLai() {
+  for (const id of ['nguoiNghiaTrang', 'nguoiThienTai', 'nguoiMoiTruong', 'soThang']) {
+    $(id).addEventListener('focus', e => e.target.select());
+  }
+
+  // ---- Hoá đơn ----
+  function tinhVaVeHoaDon() {
     if (!hoDangChon) return;
     const tong = Thue.sumThueDat(hoDangChon.rows);
     const r = Thue.computeTotals({
@@ -368,23 +384,59 @@
       soThang: $('soThang').value,
     }, caiDat);
     const L = Object.fromEntries(r.lines.map(l => [l.key, l]));
-    $('tienThueDat').textContent = Thue.formatMoney(L.thueDat.amount);
-    $('ctThueDat').textContent = hoDangChon.rows.length > 1 ? `Cộng ${hoDangChon.rows.length} dòng trong sổ bộ` : 'Theo sổ bộ thuế';
-    const gc = $('ghiChuThueDat');
-    let ghiChu = L.thueDat.note || '';
-    if (!ghiChu && tong.soDongThieu > 0) ghiChu = `${tong.soDongThieu} dòng không có số thuế, tính 0 đ`;
-    if (ghiChu) { gc.textContent = ghiChu; hien('ghiChuThueDat'); } else an('ghiChuThueDat');
-    $('ctNghiaTrang').textContent = L.nghiaTrang.detail; $('tienNghiaTrang').textContent = Thue.formatMoney(L.nghiaTrang.amount);
-    $('ctThienTai').textContent = L.thienTai.detail; $('tienThienTai').textContent = Thue.formatMoney(L.thienTai.amount);
-    $('ctMoiTruong').textContent = L.moiTruong.detail; $('tienMoiTruong').textContent = Thue.formatMoney(L.moiTruong.amount);
-    $('tienTong').textContent = Thue.formatMoney(r.total);
+
+    $('hdTen').textContent = hoDangChon.ten;
+    const ul = $('hdDong');
+    ul.innerHTML = '';
+    if (hoDangChon.rows.length === 0) {
+      const li = document.createElement('li');
+      li.textContent = 'Không có dòng nào trong file Excel';
+      ul.appendChild(li);
+    } else {
+      for (const h of hoDangChon.rows) {
+        const li = document.createElement('li');
+        li.textContent = `${moTaDong(h) || h.ten} — ${h.thuePhaiNop === null ? 'không có số thuế' : Thue.formatMoney(h.thuePhaiNop)}`;
+        ul.appendChild(li);
+      }
+    }
+
+    const khoan = $('hdKhoan');
+    khoan.innerHTML = '';
+    let ghiChuThueDat = L.thueDat.note || '';
+    if (!ghiChuThueDat && tong.soDongThieu > 0) ghiChuThueDat = `${tong.soDongThieu} dòng không có số thuế, tính 0 đ`;
+    const chiTiet = {
+      thueDat: hoDangChon.rows.length > 1 ? `Cộng ${hoDangChon.rows.length} dòng trong sổ bộ` : L.thueDat.detail,
+    };
+    for (const l of r.lines) {
+      const hang = document.createElement('div');
+      hang.className = 'hd-hang';
+      const ten = document.createElement('div');
+      ten.className = 'hd-ten';
+      ten.innerHTML = `${l.label}<div class="hd-ct">${chiTiet[l.key] || l.detail}</div>`;
+      if (l.key === 'thueDat' && ghiChuThueDat) {
+        const gc = document.createElement('span');
+        gc.className = 'ghichu';
+        gc.textContent = ghiChuThueDat;
+        ten.appendChild(gc);
+      }
+      const tien = document.createElement('div');
+      tien.className = 'hd-tien';
+      tien.textContent = Thue.formatMoney(l.amount);
+      hang.append(ten, tien);
+      khoan.appendChild(hang);
+    }
+    $('hdTong').textContent = Thue.formatMoney(r.total);
+    const now = new Date();
+    const p2 = n => String(n).padStart(2, '0');
+    $('hdThoiDiem').textContent = `Tính lúc ${p2(now.getHours())}:${p2(now.getMinutes())} ${p2(now.getDate())}/${p2(now.getMonth() + 1)}/${now.getFullYear()}`;
+
+    hien('hoaDon');
+    $('hoaDon').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
-  for (const id of ['nguoiNghiaTrang', 'nguoiThienTai', 'nguoiMoiTruong', 'soThang']) {
-    $(id).addEventListener('input', tinhLai);
-    $(id).addEventListener('focus', e => e.target.select());
-  }
+  $('nutTinhTien').addEventListener('click', tinhVaVeHoaDon);
   $('nutHoKhac').addEventListener('click', () => {
-    hoDangChon = null; an('buoc3'); daChon.clear();
+    hoDangChon = null; daChon.clear();
+    an('buoc3'); an('hoaDon');
     $('oTim').value = ''; timKiem();
     $('buoc2').scrollIntoView({ behavior: 'smooth', block: 'start' });
     $('oTim').focus();
