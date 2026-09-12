@@ -142,8 +142,12 @@ Thiết kế ưu tiên màn hình điện thoại (mobile-first), một cột, t
    mặc định theo đơn giá; nút lớn "Tính tiền".
 6. **Hoá đơn** — chỉ hiện sau khi bấm "Tính tiền": tên hộ; các dòng sổ bộ đã
    chọn (STT, tiểu mục, đã nộp, thuế); bốn khoản, mỗi khoản một hàng gồm tên,
-   cách tính và số tiền căn phải; hàng "TỔNG CỘNG" nổi bật; nút "Tính cho hộ
-   khác" quay về Bước 2 và xoá lựa chọn. Bấm "Tính tiền" lần nữa thì vẽ lại
+   cách tính và số tiền căn phải; mỗi khoản có một màu nền nhạt riêng để dễ
+   phân biệt (thuế đất xanh dương nhạt, nghĩa trang tím nhạt, thiên tai cam
+   nhạt, môi trường xanh lá nhạt; chữ vẫn tối, tương phản cao); hàng "TỔNG
+   CỘNG" nền trắng, chữ đậm; nút "Tính cho hộ khác" quay về Bước 2 và xoá lựa
+   chọn. Khi tích dòng ở Bước 2, Bước 3 chỉ hiện ra bên dưới, không tự cuộn
+   hay chuyển focus để người dùng tiếp tục tích/bỏ tích. Bấm "Tính tiền" lần nữa thì vẽ lại
    hoá đơn theo số liệu mới; không tự tính khi gõ.
 
 Quy tắc gộp hộ (đối xứng): hai dòng cùng hộ khi tên chuẩn hoá bằng nhau và
