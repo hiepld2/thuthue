@@ -44,13 +44,15 @@ Phần giao diện chỉ gọi ba hàm trên và vẽ kết quả.
   chỉ có số thứ tự cột) nên bỏ qua dòng ngay dưới tiêu đề nếu toàn số nguyên nhỏ.
 - Ánh xạ cột theo từ khoá trong tên tiêu đề (đã bỏ dấu, thường hoá):
   - `mst`: chứa "mst"
-  - `ten`: chứa "ten nnt" hoặc "ten"
+  - `ten`: chứa "ten nnt", "ten nguoi nop thue", "ho ten" hoặc "ho va ten"
   - `ngaySinh`: chứa "ngay sinh"
   - `cccd`: chứa "cccd"
   - `dienTich`: chứa "dien tich"
   - `thon`: chứa "thon"
   - `thuePhaiNop`: chứa "tong so thue phai nop" (ưu tiên), sau đó "phai nop"
-- Cột bắt buộc: `ten`, `cccd`, `thuePhaiNop`. Thiếu cột nào thì báo lỗi liệt kê
+- Cột bắt buộc: `ten`, `cccd`, `thuePhaiNop`. Không dùng từ khoá `ten` đơn lẻ để
+  tránh bắt nhầm cột khác có chữ "tên"; chấp nhận `ten nnt`, `ten nguoi nop thue`,
+  `ho ten`, `ho va ten`. Thiếu cột nào thì báo lỗi liệt kê
   tên cột thiếu và không nạp dữ liệu.
 - Bỏ qua dòng không có tên.
 - `thuePhaiNop`: chuyển chuỗi có dấu chấm/phẩy phân cách nghìn thành số. Ô trống
@@ -62,8 +64,15 @@ Phần giao diện chỉ gọi ba hàm trên và vẽ kết quả.
 - Ô nhập duy nhất. Chuẩn hoá chuỗi tìm: bỏ dấu, thường hoá, gộp khoảng trắng.
 - Khớp nếu tên chuẩn hoá chứa chuỗi tìm, hoặc CCCD chứa chuỗi tìm.
 - Luôn hiện danh sách kết quả (tối đa 50), kể cả khi chỉ có một. Mỗi dòng gồm
-  tên, ngày sinh, CCCD, thôn, thuế phải nộp để phân biệt các hộ trùng tên. Bấm
-  một dòng để chọn; không tự chọn thay người dùng.
+  ô tích, tên, ngày sinh, CCCD, thôn, diện tích, thuế phải nộp để phân biệt các
+  hộ trùng tên. Không tự chọn thay người dùng.
+- Một hộ có thể có nhiều dòng trong Excel (nhiều thửa đất, cùng MST/tên/CCCD).
+  Bấm một dòng sẽ tích dòng đó và tự tích các dòng khác có cùng CCCD (khi CCCD
+  khác rỗng và khác "0") và cùng tên chuẩn hoá; người dùng có thể bỏ tích từng
+  dòng. Nút "Tính cho N dòng đã chọn" chuyển sang bước 3.
+- Bước 3 liệt kê các dòng đã chọn; thuế đất = tổng "Tổng số thuế phải nộp" của
+  các dòng đó. Dòng nào trống số thuế thì tính 0 đ và ghi chú; nếu mọi dòng đều
+  trống thì ghi "Không tìm thấy trong file".
 - Chuỗi tìm rỗng thì không hiện kết quả.
 - Không có kết quả thì hiện "Không tìm thấy trong file". Người dùng vẫn có thể
   bấm "Tính không có thuế đất" để tiếp tục với thuế đất = 0 đ.

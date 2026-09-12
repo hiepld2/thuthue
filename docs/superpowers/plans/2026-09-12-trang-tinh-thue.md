@@ -242,7 +242,7 @@ Thêm vào `thue.js` sau `formatMoney`, và thêm `parseSheetRows` vào object `
   // Cột: khoá nội bộ -> { label hiển thị, danh sách từ khoá (đã bỏ dấu), bắt buộc }
   const COLUMNS = [
     { key: 'mst', label: 'MST', keywords: ['mst', 'ma so thue'], required: false },
-    { key: 'ten', label: 'Tên NNT', keywords: ['ten nnt', 'ten nguoi nop thue', 'ho ten', 'ten'], required: true },
+    { key: 'ten', label: 'Tên NNT', keywords: ['ten nnt', 'ten nguoi nop thue', 'ho ten', 'ho va ten'], required: true },
     { key: 'ngaySinh', label: 'Ngày sinh', keywords: ['ngay sinh'], required: false },
     { key: 'cccd', label: 'Số CCCD', keywords: ['cccd', 'cmnd', 'can cuoc'], required: true },
     { key: 'dienTich', label: 'Diện tích', keywords: ['dien tich'], required: false },
@@ -443,6 +443,7 @@ git -c user.name="phucvm3" -c user.email="phucvm3@fpt.com" commit -m "feat: tìm
   - `Line = { key: 'thueDat'|'nghiaTrang'|'thienTai'|'moiTruong', label: string, detail: string, amount: number, note?: string }`
   - `thueDat === null` → dòng thuế đất `amount: 0`, `note: 'Không tìm thấy trong file'`.
   - Số người/tháng âm, `NaN`, không phải số → coi là 0.
+  - `sumThueDat(rows: Row[]) -> { thueDat: number | null, soDongThieu: number }` — cộng `thuePhaiNop` của các dòng đã chọn; dòng `null` tính 0 và đếm vào `soDongThieu`; nếu `rows` rỗng hoặc mọi dòng đều `null` thì `thueDat: null`.
 
 - [ ] **Step 1: Viết test thất bại**
 
@@ -477,6 +478,14 @@ test('computeTotals: thuế đất null thành 0 và có ghi chú', () => {
   assert.equal(r.total, 0);
 });
 
+test('sumThueDat cộng nhiều dòng, đếm dòng thiếu', () => {
+  const r1 = { thuePhaiNop: 54000 }, r2 = { thuePhaiNop: 27000 }, r3 = { thuePhaiNop: null };
+  assert.deepEqual(T.sumThueDat([r1, r2]), { thueDat: 81000, soDongThieu: 0 });
+  assert.deepEqual(T.sumThueDat([r1, r3]), { thueDat: 54000, soDongThieu: 1 });
+  assert.deepEqual(T.sumThueDat([r3]), { thueDat: null, soDongThieu: 1 });
+  assert.deepEqual(T.sumThueDat([]), { thueDat: null, soDongThieu: 0 });
+});
+
 test('computeTotals: giá trị âm, NaN, chuỗi coi là 0; đơn giá tuỳ chỉnh', () => {
   const r = T.computeTotals(
     { thueDat: 1000, nguoiNghiaTrang: -2, nguoiThienTai: NaN, nguoiMoiTruong: '3', soThang: 'x' },
@@ -492,7 +501,7 @@ test('computeTotals: giá trị âm, NaN, chuỗi coi là 0; đơn giá tuỳ ch
 - [ ] **Step 2: Chạy test, xác nhận thất bại**
 
 Run: `node test/test.js`
-Expected: 3 test `computeTotals` báo `✗` với `T.computeTotals is not a function`.
+Expected: 3 test `computeTotals` và 1 test `sumThueDat` báo `✗` với `... is not a function`.
 
 - [ ] **Step 3: Cài đặt `computeTotals`**
 
@@ -503,6 +512,15 @@ Thêm vào `thue.js` sau `searchRows`, thêm `computeTotals` vào `return`:
     const n = typeof v === 'number' ? v : parseInt(String(v), 10);
     if (!Number.isFinite(n) || n < 0) return 0;
     return Math.floor(n);
+  }
+
+  function sumThueDat(rows) {
+    let total = 0, soDongThieu = 0, coSo = false;
+    for (const r of rows || []) {
+      if (r.thuePhaiNop === null || r.thuePhaiNop === undefined) soDongThieu++;
+      else { total += r.thuePhaiNop; coSo = true; }
+    }
+    return { thueDat: coSo ? total : null, soDongThieu };
   }
 
   function computeTotals(input, rates) {
@@ -535,19 +553,19 @@ Thêm vào `thue.js` sau `searchRows`, thêm `computeTotals` vào `return`:
 ```
 
 ```js
-  return { DEFAULT_RATES, normalizeText, parseMoney, formatMoney, parseSheetRows, searchRows, computeTotals };
+  return { DEFAULT_RATES, normalizeText, parseMoney, formatMoney, parseSheetRows, searchRows, sumThueDat, computeTotals };
 ```
 
 - [ ] **Step 4: Chạy test, xác nhận đạt**
 
 Run: `node test/test.js`
-Expected: `15 test đạt`, exit code 0.
+Expected: `16 test đạt`, exit code 0.
 
 - [ ] **Step 5: Commit**
 
 ```bash
 git add thue.js test/test.js
-git -c user.name="phucvm3" -c user.email="phucvm3@fpt.com" commit -m "feat: tính tổng 4 khoản thu"
+git -c user.name="phucvm3" -c user.email="phucvm3@fpt.com" commit -m "feat: tính tổng 4 khoản thu và cộng thuế đất nhiều dòng"
 ```
 
 ---
@@ -559,7 +577,7 @@ git -c user.name="phucvm3" -c user.email="phucvm3@fpt.com" commit -m "feat: tín
 - Create: `test/mau.xlsx` (sinh ra từ script)
 
 **Interfaces:**
-- Produces: `test/mau.xlsx` có sheet đầu tên `Sổ bộ`, dòng 1 tiêu đề lớn, dòng 2 trống, dòng 3 tiêu đề cột giống bảng in, dòng 4 số thứ tự cột 1..19, 10 dòng dữ liệu từ dòng 5. Cột "Số CCCD" định dạng text. Hộ thứ 10 có ô "Tổng số thuế phải nộp" trống.
+- Produces: `test/mau.xlsx` có sheet đầu tên `Sổ bộ`, dòng 1 tiêu đề lớn, dòng 2 trống, dòng 3 tiêu đề cột giống bảng in, dòng 4 số thứ tự cột 1..19, 11 dòng dữ liệu từ dòng 5. Cột "Số CCCD" định dạng text. Hộ LÊ VĂN AN có 2 dòng (cùng MST, tên, CCCD; hai thửa đất 54.000 và 27.000). Dòng cuối (LÊ VĂN BÌNH) có ô "Tổng số thuế phải nộp" trống.
 
 - [ ] **Step 1: Viết script sinh file**
 
@@ -579,6 +597,7 @@ THON = 'Thôn Thống Nhất (Xã Đồng Tảo cũ)'
 # (STT, MST, Tên, Ngày sinh, CCCD, Diện tích, Giá đất, Phát sinh, Tổng phải nộp)
 DATA = [
     (177, '8220707543', 'LÊ VĂN AN',          '04/06/1936', '145665829',    200, 900000,  54000,  54000),
+    (178, '8220707543', 'LÊ VĂN AN',          '04/06/1936', '145665829',    100, 900000,  27000,  27000),
     (343, '8220708963', 'NGUYỄN VĂN AN',      '18/04/1962', '011618238',    325, 2400000, 234000, 468000),
     (25,  '8023404726', 'LÊ THỊ VÂN ANH',     '17/09/1984', '001184013031', 120, 2400000, 4282,   4282),
     (133, '8220707166', 'GIANG LÊ ANH',       '01/01/1956', '145344429',    200, 900000,  54000,  54000),
@@ -628,17 +647,17 @@ print(json.dumps([[c for c in r] for r in ws.iter_rows(values_only=True)], ensur
 const T = require('./thue.js');
 const m = JSON.parse(require('fs').readFileSync('/tmp/mau.json', 'utf8'));
 const r = T.parseSheetRows(m);
-console.log(r.ok, r.rows.length, r.rows[0].ten, r.rows[9].thuePhaiNop);
+console.log(r.ok, r.rows.length, r.rows[0].ten, r.rows[1].thuePhaiNop, r.rows[10].thuePhaiNop);
 "
 ```
 
-Expected: `true 10 LÊ VĂN AN null`
+Expected: `true 11 LÊ VĂN AN 27000 null`
 
 - [ ] **Step 4: Commit**
 
 ```bash
 git add test/tao_mau.py test/mau.xlsx
-git -c user.name="phucvm3" -c user.email="phucvm3@fpt.com" commit -m "test: file Excel mẫu 10 hộ"
+git -c user.name="phucvm3" -c user.email="phucvm3@fpt.com" commit -m "test: file Excel mẫu 11 dòng, có hộ nhiều thửa"
 ```
 
 (`.gitignore` đã có ngoại lệ `!test/mau.xlsx`; nếu `git add` báo bị ignore, kiểm tra lại dòng đó.)
@@ -649,10 +668,11 @@ git -c user.name="phucvm3" -c user.email="phucvm3@fpt.com" commit -m "test: file
 
 **Files:**
 - Create: `index.html`
+- Create: `.claude/launch.json`
 
 **Interfaces:**
-- Consumes: `window.Thue.{parseSheetRows, searchRows, computeTotals, formatMoney, DEFAULT_RATES}`; `XLSX.read`, `XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: '' })`.
-- Produces: trang hoàn chỉnh, 3 bước, khối đơn giá, lưu `localStorage` khoá `thue-settings`.
+- Consumes: `window.Thue.{parseSheetRows, searchRows, sumThueDat, computeTotals, formatMoney, normalizeText, DEFAULT_RATES}`; `XLSX.read`, `XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: '' })`.
+- Produces: trang hoàn chỉnh 3 bước, chọn nhiều dòng cho một hộ, khối đơn giá, lưu `localStorage` khoá `thue-settings`.
 
 - [ ] **Step 1: Viết `index.html`**
 
@@ -686,18 +706,23 @@ git -c user.name="phucvm3" -c user.email="phucvm3@fpt.com" commit -m "test: file
   .nut:disabled { opacity: .5; cursor: default; }
   input[type=text], input[type=number] { min-height: 48px; width: 100%; padding: 0 14px; border: 2px solid var(--vien); border-radius: 10px; }
   input:focus { outline: 3px solid #9cc4ee; border-color: var(--chinh); }
+  input[type=checkbox] { width: 26px; height: 26px; flex: none; cursor: pointer; }
   .trangthai { margin-top: 12px; padding: 10px 14px; border-radius: 10px; }
   .trangthai.ok { background: var(--ok-nen); color: var(--ok); }
   .trangthai.loi { background: var(--loi-nen); color: var(--loi); }
   .ketqua { list-style: none; margin: 12px 0 0; padding: 0; border: 1px solid var(--vien); border-radius: 10px; overflow: hidden; }
-  .ketqua li { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 12px 14px; border-top: 1px solid var(--vien); cursor: pointer; }
+  .ketqua li { display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-top: 1px solid var(--vien); cursor: pointer; }
   .ketqua li:first-child { border-top: 0; }
   .ketqua li:hover { background: var(--nhan); }
+  .ketqua li.chon { background: var(--nhan); }
+  .ketqua .noidung { flex: 1; min-width: 0; }
   .ketqua .ten { font-weight: 700; }
-  .ketqua .phu-chu { color: var(--mo); font-size: .9rem; }
+  .phu-chu { color: var(--mo); font-size: .9rem; }
   .ketqua .tien { font-weight: 700; white-space: nowrap; }
   .thongtin { background: var(--nhan); border-radius: 10px; padding: 12px 14px; margin-bottom: 14px; }
   .thongtin .ten { font-size: 1.2rem; font-weight: 700; }
+  .thongtin ul { margin: 8px 0 0; padding-left: 22px; }
+  .thongtin li { margin: 2px 0; }
   table { width: 100%; border-collapse: collapse; }
   th, td { padding: 12px 8px; border-bottom: 1px solid var(--vien); text-align: left; vertical-align: middle; }
   th { color: var(--mo); font-weight: 600; font-size: .9rem; }
@@ -731,9 +756,10 @@ git -c user.name="phucvm3" -c user.email="phucvm3@fpt.com" commit -m "test: file
   <!-- Bước 2 -->
   <section class="buoc an" id="buoc2">
     <h2><span class="so">2</span> Tìm hộ cần tính</h2>
-    <p class="huongdan">Gõ tên hoặc số CCCD, sau đó bấm vào đúng hộ trong danh sách.</p>
+    <p class="huongdan">Gõ tên hoặc số CCCD, rồi bấm vào đúng hộ. Hộ có nhiều thửa đất sẽ có nhiều dòng: các dòng cùng số CCCD được tích sẵn, bạn có thể bỏ tích dòng không cần.</p>
     <input type="text" id="oTim" placeholder="Ví dụ: Lê Văn An hoặc 145665829" autocomplete="off">
     <ul id="dsKetQua" class="ketqua an"></ul>
+    <div id="thanhChon" class="hang-nut an"><button type="button" class="nut" id="nutTinh">Tính cho 0 dòng đã chọn</button></div>
     <div id="khongThay" class="trangthai loi an">
       Không tìm thấy trong file.
       <div class="hang-nut"><button type="button" class="nut phu" id="nutKhongThue">Tính với thuế đất 0 đ</button></div>
@@ -748,7 +774,7 @@ git -c user.name="phucvm3" -c user.email="phucvm3@fpt.com" commit -m "test: file
       <thead><tr><th>Khoản thu</th><th>Số người</th><th class="tien">Số tiền</th></tr></thead>
       <tbody>
         <tr>
-          <td><div id="nhanThueDat">Thuế sử dụng đất phi nông nghiệp</div><div class="chitiet">Theo sổ bộ thuế</div><span id="ghiChuThueDat" class="ghichu an"></span></td>
+          <td>Thuế sử dụng đất phi nông nghiệp<div class="chitiet" id="ctThueDat">Theo sổ bộ thuế</div><span id="ghiChuThueDat" class="ghichu an"></span></td>
           <td></td>
           <td class="tien" id="tienThueDat">0 đ</td>
         </tr>
@@ -849,7 +875,7 @@ git -c user.name="phucvm3" -c user.email="phucvm3@fpt.com" commit -m "test: file
   $('fileExcel').addEventListener('change', async ev => {
     const f = ev.target.files && ev.target.files[0];
     if (!f) return;
-    an('buoc2'); an('buoc3'); cacHo = [];
+    an('buoc2'); an('buoc3'); cacHo = []; daChon.clear();
     try {
       const buf = await f.arrayBuffer();
       const wb = XLSX.read(buf, { type: 'array', cellDates: true });
@@ -858,7 +884,7 @@ git -c user.name="phucvm3" -c user.email="phucvm3@fpt.com" commit -m "test: file
       const r = Thue.parseSheetRows(matrix);
       if (!r.ok) { baoFile('loi', r.error); return; }
       cacHo = r.rows;
-      baoFile('ok', `Đã nạp ${cacHo.length} hộ từ file "${f.name}". Chuyển sang bước 2.`);
+      baoFile('ok', `Đã nạp ${cacHo.length} dòng từ file "${f.name}". Chuyển sang bước 2.`);
       hien('buoc2'); $('oTim').value = ''; timKiem(); $('oTim').focus();
     } catch (e) {
       baoFile('loi', 'Không đọc được file. Hãy chọn file .xlsx hoặc .xls.');
@@ -870,43 +896,94 @@ git -c user.name="phucvm3" -c user.email="phucvm3@fpt.com" commit -m "test: file
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('fileExcel').click(); }
   });
 
-  // ---- Bước 2: tìm ----
-  let hoDangChon = null;
-  function timKiem() {
-    const q = $('oTim').value;
+  // ---- Bước 2: tìm và chọn nhiều dòng ----
+  const daChon = new Set(); // các bản ghi (object trong cacHo) đang được tích
+  let ketQuaHienTai = [];
+
+  function moTaDong(h) {
+    return [h.ngaySinh && `Sinh ${h.ngaySinh}`, h.cccd && `CCCD ${h.cccd}`, h.thon, h.dienTich && `${h.dienTich} m²`]
+      .filter(Boolean).join(' · ');
+  }
+  function cungHo(a, b) {
+    const cccdA = String(a.cccd || '').trim();
+    if (!cccdA || cccdA === '0') return false;
+    return cccdA === String(b.cccd || '').trim() && Thue.normalizeText(a.ten) === Thue.normalizeText(b.ten);
+  }
+  function capNhatNutTinh() {
+    const n = daChon.size;
+    $('nutTinh').textContent = `Tính cho ${n} dòng đã chọn`;
+    $('nutTinh').disabled = n === 0;
+    if (ketQuaHienTai.length) hien('thanhChon'); else an('thanhChon');
+  }
+  function veKetQua() {
     const ds = $('dsKetQua');
     ds.innerHTML = '';
-    const kq = Thue.searchRows(cacHo, q, 50);
-    if (!q.trim()) { an('dsKetQua'); an('khongThay'); return; }
-    if (kq.length === 0) { an('dsKetQua'); hien('khongThay'); return; }
-    an('khongThay');
-    for (const h of kq) {
+    for (const h of ketQuaHienTai) {
       const li = document.createElement('li');
-      const trai = document.createElement('div');
-      trai.innerHTML = `<div class="ten"></div><div class="phu-chu"></div>`;
-      trai.querySelector('.ten').textContent = h.ten;
-      trai.querySelector('.phu-chu').textContent = [h.ngaySinh && `Sinh ${h.ngaySinh}`, h.cccd && `CCCD ${h.cccd}`, h.thon].filter(Boolean).join(' · ');
-      const phai = document.createElement('div');
-      phai.className = 'tien';
-      phai.textContent = h.thuePhaiNop === null ? 'Không có số thuế' : Thue.formatMoney(h.thuePhaiNop);
-      li.append(trai, phai);
-      li.addEventListener('click', () => chonHo(h));
+      if (daChon.has(h)) li.classList.add('chon');
+      const cb = document.createElement('input');
+      cb.type = 'checkbox'; cb.checked = daChon.has(h); cb.tabIndex = -1;
+      const nd = document.createElement('div');
+      nd.className = 'noidung';
+      nd.innerHTML = '<div class="ten"></div><div class="phu-chu"></div>';
+      nd.querySelector('.ten').textContent = h.ten;
+      nd.querySelector('.phu-chu').textContent = moTaDong(h);
+      const tien = document.createElement('div');
+      tien.className = 'tien';
+      tien.textContent = h.thuePhaiNop === null ? 'Không có số thuế' : Thue.formatMoney(h.thuePhaiNop);
+      li.append(cb, nd, tien);
+      li.addEventListener('click', () => batTat(h));
       ds.appendChild(li);
     }
     hien('dsKetQua');
+    capNhatNutTinh();
+  }
+  function batTat(h) {
+    if (daChon.has(h)) {
+      daChon.delete(h);
+    } else {
+      daChon.add(h);
+      // tự tích các dòng khác của cùng hộ (cùng CCCD hợp lệ và cùng tên)
+      for (const k of cacHo) if (k !== h && cungHo(h, k)) daChon.add(k);
+    }
+    veKetQua();
+  }
+  function timKiem() {
+    const q = $('oTim').value;
+    ketQuaHienTai = Thue.searchRows(cacHo, q, 50);
+    if (!q.trim()) { ketQuaHienTai = []; an('dsKetQua'); an('khongThay'); an('thanhChon'); return; }
+    if (ketQuaHienTai.length === 0) { an('dsKetQua'); an('thanhChon'); hien('khongThay'); return; }
+    an('khongThay');
+    veKetQua();
   }
   $('oTim').addEventListener('input', timKiem);
+  $('nutTinh').addEventListener('click', () => {
+    if (daChon.size === 0) return;
+    const rows = cacHo.filter(h => daChon.has(h)); // giữ thứ tự trong file
+    chonHo({ ten: rows[0].ten, rows });
+  });
   $('nutKhongThue').addEventListener('click', () => {
-    chonHo({ ten: $('oTim').value.trim() || 'Hộ chưa có trong sổ', ngaySinh: '', cccd: '', thon: '', thuePhaiNop: null });
+    chonHo({ ten: $('oTim').value.trim() || 'Hộ chưa có trong sổ', rows: [] });
   });
 
   // ---- Bước 3: tính ----
-  function chonHo(h) {
-    hoDangChon = h;
+  let hoDangChon = null; // { ten, rows }
+  function chonHo(ho) {
+    hoDangChon = ho;
     const tt = $('thongTinHo');
-    tt.innerHTML = '<div class="ten"></div><div class="phu-chu"></div>';
-    tt.querySelector('.ten').textContent = h.ten;
-    tt.querySelector('.phu-chu').textContent = [h.ngaySinh && `Sinh ${h.ngaySinh}`, h.cccd && `CCCD ${h.cccd}`, h.thon, h.dienTich && `Diện tích ${h.dienTich} m²`].filter(Boolean).join(' · ');
+    tt.innerHTML = '<div class="ten"></div><div class="phu-chu" id="soDong"></div><ul id="dsDaChon"></ul>';
+    tt.querySelector('.ten').textContent = ho.ten;
+    const ul = tt.querySelector('#dsDaChon');
+    if (ho.rows.length === 0) {
+      tt.querySelector('#soDong').textContent = 'Không có dòng nào trong file Excel.';
+    } else {
+      tt.querySelector('#soDong').textContent = ho.rows.length === 1 ? '1 dòng trong sổ bộ:' : `${ho.rows.length} dòng trong sổ bộ (cộng dồn thuế đất):`;
+      for (const h of ho.rows) {
+        const li = document.createElement('li');
+        li.textContent = `${moTaDong(h) || h.ten} — ${h.thuePhaiNop === null ? 'không có số thuế' : Thue.formatMoney(h.thuePhaiNop)}`;
+        ul.appendChild(li);
+      }
+    }
     $('nguoiNghiaTrang').value = 0; $('nguoiThienTai').value = 0; $('nguoiMoiTruong').value = 0;
     $('soThang').value = caiDat.soThang;
     hien('buoc3'); tinhLai();
@@ -915,8 +992,9 @@ git -c user.name="phucvm3" -c user.email="phucvm3@fpt.com" commit -m "test: file
   }
   function tinhLai() {
     if (!hoDangChon) return;
+    const tong = Thue.sumThueDat(hoDangChon.rows);
     const r = Thue.computeTotals({
-      thueDat: hoDangChon.thuePhaiNop,
+      thueDat: tong.thueDat,
       nguoiNghiaTrang: $('nguoiNghiaTrang').value,
       nguoiThienTai: $('nguoiThienTai').value,
       nguoiMoiTruong: $('nguoiMoiTruong').value,
@@ -924,8 +1002,11 @@ git -c user.name="phucvm3" -c user.email="phucvm3@fpt.com" commit -m "test: file
     }, caiDat);
     const L = Object.fromEntries(r.lines.map(l => [l.key, l]));
     $('tienThueDat').textContent = Thue.formatMoney(L.thueDat.amount);
+    $('ctThueDat').textContent = hoDangChon.rows.length > 1 ? `Cộng ${hoDangChon.rows.length} dòng trong sổ bộ` : 'Theo sổ bộ thuế';
     const gc = $('ghiChuThueDat');
-    if (L.thueDat.note) { gc.textContent = L.thueDat.note; hien('ghiChuThueDat'); } else an('ghiChuThueDat');
+    let ghiChu = L.thueDat.note || '';
+    if (!ghiChu && tong.soDongThieu > 0) ghiChu = `${tong.soDongThieu} dòng không có số thuế, tính 0 đ`;
+    if (ghiChu) { gc.textContent = ghiChu; hien('ghiChuThueDat'); } else an('ghiChuThueDat');
     $('ctNghiaTrang').textContent = L.nghiaTrang.detail; $('tienNghiaTrang').textContent = Thue.formatMoney(L.nghiaTrang.amount);
     $('ctThienTai').textContent = L.thienTai.detail; $('tienThienTai').textContent = Thue.formatMoney(L.thienTai.amount);
     $('ctMoiTruong').textContent = L.moiTruong.detail; $('tienMoiTruong').textContent = Thue.formatMoney(L.moiTruong.amount);
@@ -936,7 +1017,7 @@ git -c user.name="phucvm3" -c user.email="phucvm3@fpt.com" commit -m "test: file
     $(id).addEventListener('focus', e => e.target.select());
   }
   $('nutHoKhac').addEventListener('click', () => {
-    hoDangChon = null; an('buoc3');
+    hoDangChon = null; an('buoc3'); daChon.clear();
     $('oTim').value = ''; timKiem();
     $('buoc2').scrollIntoView({ behavior: 'smooth', block: 'start' });
     $('oTim').focus();
@@ -952,7 +1033,7 @@ git -c user.name="phucvm3" -c user.email="phucvm3@fpt.com" commit -m "test: file
 
 - [ ] **Step 2: Kiểm tra bằng trình duyệt trong app**
 
-Chạy server tĩnh bằng `.claude/launch.json` (tạo nếu chưa có):
+Tạo `.claude/launch.json`:
 
 ```json
 {
@@ -979,22 +1060,23 @@ await new Promise(r => setTimeout(r, 500));
 document.getElementById('trangThaiFile').textContent;
 ```
 
-   Expected: chuỗi bắt đầu bằng `Đã nạp 10 hộ`, Bước 2 hiện ra.
-3. Gõ vào ô tìm bằng `computer` → `left_click` ô `#oTim`, `type` `van an`. Expected: danh sách 2 dòng (LÊ VĂN AN, NGUYỄN VĂN AN), mỗi dòng có ngày sinh, CCCD, thôn, số thuế.
-4. Bấm dòng "LÊ VĂN AN". Expected: Bước 3 hiện, thuế đất `54.000 đ`, tổng `54.000 đ`.
-5. Nhập số người 4 / 3 / 4, số tháng 6. Expected: các dòng `60.000 đ`, `30.000 đ`, `360.000 đ`, tổng `504.000 đ`.
-6. Bấm "Tính cho hộ khác", tìm `le van binh`, chọn. Expected: dòng thuế đất `0 đ` kèm ghi chú "Không tìm thấy trong file".
-7. Tìm `zzz`. Expected: hộp "Không tìm thấy trong file" và nút "Tính với thuế đất 0 đ".
-8. Mở khối Đơn giá, đổi nghĩa trang thành 20000, tải lại trang. Expected: giá trị vẫn là 20000. Bấm "Khôi phục mặc định" để trả về 15000.
-9. `resize_window` preset `mobile`, chụp `screenshot`. Expected: không tràn ngang, chữ và nút đủ to. Trả về `desktop`.
+   Expected: chuỗi bắt đầu bằng `Đã nạp 11 dòng`, Bước 2 hiện ra.
+3. Bấm ô `#oTim`, gõ `van an`. Expected: danh sách 3 dòng (LÊ VĂN AN ×2, NGUYỄN VĂN AN), mỗi dòng có ô tích, ngày sinh, CCCD, thôn, diện tích, số thuế; nút "Tính cho 0 dòng đã chọn" bị mờ.
+4. Bấm dòng LÊ VĂN AN thứ nhất. Expected: cả 2 dòng LÊ VĂN AN được tích, NGUYỄN VĂN AN không; nút đổi thành "Tính cho 2 dòng đã chọn".
+5. Bấm nút đó. Expected: Bước 3 hiện, khối thông tin liệt kê 2 dòng, thuế đất `81.000 đ`, chi tiết "Cộng 2 dòng trong sổ bộ", tổng `81.000 đ`.
+6. Nhập số người 4 / 3 / 4, số tháng 6. Expected: `60.000 đ`, `30.000 đ`, `360.000 đ`, tổng `531.000 đ`.
+7. Bấm "Tính cho hộ khác", tìm `le van binh`, bấm dòng, bấm "Tính cho 1 dòng đã chọn". Expected: thuế đất `0 đ` kèm ghi chú "Không tìm thấy trong file".
+8. Tìm `zzz`. Expected: hộp "Không tìm thấy trong file" và nút "Tính với thuế đất 0 đ"; bấm nút → Bước 3 với thuế đất 0 đ.
+9. Mở khối Đơn giá, đổi nghĩa trang thành 20000, tải lại trang. Expected: giá trị vẫn là 20000. Bấm "Khôi phục mặc định" → 15000.
+10. `resize_window` preset `mobile`, chụp `screenshot`. Expected: không tràn ngang, chữ và nút đủ to. Trả về `desktop`.
 
-Ghi kết quả từng mục vào phần xác minh của Task 7.
+Ghi kết quả từng mục vào báo cáo.
 
 - [ ] **Step 3: Commit**
 
 ```bash
 git add index.html .claude/launch.json
-git -c user.name="phucvm3" -c user.email="phucvm3@fpt.com" commit -m "feat: giao diện 3 bước tra cứu và tính thuế"
+git -c user.name="phucvm3" -c user.email="phucvm3@fpt.com" commit -m "feat: giao diện 3 bước tra cứu, chọn nhiều dòng và tính thuế"
 ```
 
 ---
@@ -1061,7 +1143,7 @@ Trong mục "Kiểm thử", thay đoạn `File \`test/test.html\` chạy các h�
 node test/test.js && git status --short
 ```
 
-Expected: `15 test đạt`, exit 0; `git status` chỉ còn README.md, spec, và không có file ảnh/Excel thật.
+Expected: `16 test đạt`, exit 0; `git status` chỉ còn README.md, spec, và không có file ảnh/Excel thật.
 
 - [ ] **Step 4: Commit**
 
