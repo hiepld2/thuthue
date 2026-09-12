@@ -9,7 +9,10 @@ phòng chống thiên tai, bảo vệ môi trường.
 0. Mở trang (địa chỉ GitHub Pages hoặc mở `index.html`). Kiểm tra khối **Đơn giá**
    ở đầu trang, chỉ sửa khi đơn giá thực tế thay đổi (được ghi nhớ trên trình duyệt).
 1. Bước 1: bấm **Chọn file Excel**, chọn file sổ bộ thuế (.xlsx/.xls).
-   File chỉ được đọc trên máy bạn, không gửi đi đâu.
+   File chỉ được đọc trên máy bạn, không gửi đi đâu. Trang sẽ nhớ file này trên
+   trình duyệt: lần sau mở lại trang, dữ liệu tự nạp lại mà không cần chọn file.
+   Bấm **Chọn file khác** để nạp file khác, hoặc **Xoá dữ liệu đã lưu** để xoá
+   dữ liệu đang được nhớ trên trình duyệt.
 2. Bước 2: gõ tên hoặc số CCCD, bấm vào hộ cần tính.
    Một hộ có thể có nhiều dòng (nhiều thửa đất hoặc khoản thu, ví dụ tiền chậm nộp); bấm một dòng sẽ tự tích các dòng cùng hộ, bạn có thể bỏ tích dòng không cần. Bước 3 hiện ngay bên dưới khi có ít nhất một dòng được tích.
 3. Bước 3: nhập số người cho từng khoản (nghĩa trang, phòng chống thiên tai,

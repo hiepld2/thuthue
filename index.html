@@ -95,10 +95,11 @@
   <!-- Bước 1 -->
   <section class="buoc" id="buoc1">
     <h2><span class="so">1</span> Chọn file Excel sổ bộ thuế</h2>
-    <p class="huongdan">Bấm nút bên dưới rồi chọn file Excel (.xlsx hoặc .xls) trên máy.</p>
+    <p class="huongdan">Bấm nút bên dưới rồi chọn file Excel (.xlsx hoặc .xls) trên máy. Trang sẽ nhớ file này trên trình duyệt cho lần sau.</p>
     <label class="nut nut-lon" for="fileExcel" role="button" tabindex="0">Chọn file Excel</label>
     <input type="file" id="fileExcel" accept=".xlsx,.xls">
     <div id="trangThaiFile" class="trangthai an"></div>
+    <div id="daLuu" class="hang-nut an"><button type="button" class="nut phu" id="nutChonKhac">Chọn file khác</button><button type="button" class="nut phu" id="nutXoaLuu">Xoá dữ liệu đã lưu</button></div>
   </section>
 
   <!-- Bước 2 -->
@@ -230,6 +231,33 @@
     el.className = 'trangthai ' + loai;
     el.textContent = chu;
   }
+
+  const KHOA_DATA = 'thue-data';
+  function luuData(tenFile, rows) {
+    try {
+      localStorage.setItem(KHOA_DATA, JSON.stringify({ v: 1, tenFile, luuLuc: Date.now(), rows }));
+      return true;
+    } catch (e) { return false; }
+  }
+  function docData() {
+    try {
+      const o = JSON.parse(localStorage.getItem(KHOA_DATA) || 'null');
+      if (!o || o.v !== 1 || !Array.isArray(o.rows) || !o.rows.length) return null;
+      return o;
+    } catch (e) { return null; }
+  }
+  function xoaData() { try { localStorage.removeItem(KHOA_DATA); } catch (e) { /* bỏ qua */ } }
+  function dinhDangLuc(ms) {
+    const d = new Date(ms), p = n => String(n).padStart(2, '0');
+    return `${p(d.getHours())}:${p(d.getMinutes())} ${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()}`;
+  }
+  function apDungData(rows, tenFile, luuLuc, daLuuOk) {
+    cacHo = rows; daChon.clear(); hoDangChon = null; an('buoc3'); an('hoaDon');
+    const chu = `Đang dùng file "${tenFile}", nạp lúc ${dinhDangLuc(luuLuc)}, ${rows.length} dòng.`;
+    baoFile('ok', daLuuOk ? chu : chu + ' Không lưu được vào trình duyệt, lần sau cần chọn file lại.');
+    hien('daLuu'); hien('buoc2'); $('oTim').value = ''; timKiem();
+  }
+
   $('fileExcel').addEventListener('change', async ev => {
     const f = ev.target.files && ev.target.files[0];
     if (!f) return;
@@ -241,13 +269,19 @@
       const matrix = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: '' });
       const r = Thue.parseSheetRows(matrix);
       if (!r.ok) { baoFile('loi', r.error); return; }
-      cacHo = r.rows;
-      baoFile('ok', `Đã nạp ${cacHo.length} dòng từ file "${f.name}". Chuyển sang bước 2.`);
-      hien('buoc2'); $('oTim').value = ''; timKiem(); $('oTim').focus();
+      const ok = luuData(f.name, r.rows);
+      apDungData(r.rows, f.name, Date.now(), ok);
+      $('oTim').focus();
     } catch (e) {
       baoFile('loi', 'Không đọc được file. Hãy chọn file .xlsx hoặc .xls.');
     }
     ev.target.value = '';
+  });
+  $('nutChonKhac').addEventListener('click', () => { $('fileExcel').click(); });
+  $('nutXoaLuu').addEventListener('click', () => {
+    xoaData(); cacHo = []; daChon.clear(); hoDangChon = null;
+    an('daLuu'); an('buoc2'); an('buoc3'); an('hoaDon');
+    baoFile('ok', 'Đã xoá dữ liệu đã lưu. Hãy chọn file Excel.');
   });
   // Cho phép bấm Enter/Space trên nhãn "Chọn file Excel"
   document.querySelector('label[for=fileExcel]').addEventListener('keydown', e => {
@@ -307,7 +341,7 @@
     }
     hien('dsKetQua');
     capNhatBuoc3();
-    if (liCanFocus) liCanFocus.focus();
+    if (liCanFocus) liCanFocus.focus({ preventScroll: true });
     dongCanFocus = null;
   }
   function batTat(h) {
@@ -456,6 +490,9 @@
 
   function hien(id) { $(id).classList.remove('an'); }
   function an(id) { $(id).classList.add('an'); }
+
+  const d = docData();
+  if (d) apDungData(d.rows, d.tenFile, d.luuLuc, true);
 })();
 </script>
 </body>
