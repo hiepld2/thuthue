@@ -35,6 +35,12 @@ test('formatMoney phân cách bằng dấu chấm và hậu tố đ', () => {
   assert.equal(T.formatMoney(494), '494 đ');
 });
 
+test('formatMoney: giá trị không hữu hạn coi là 0', () => {
+  assert.equal(T.formatMoney(NaN), '0 đ');
+  assert.equal(T.formatMoney(Infinity), '0 đ');
+  assert.equal(T.formatMoney(undefined), '0 đ');
+});
+
 // --- DEFAULT_RATES ---
 test('DEFAULT_RATES đúng theo spec', () => {
   assert.deepEqual(T.DEFAULT_RATES, { nghiaTrang: 15000, thienTai: 10000, moiTruong: 15000, soThang: 6 });
@@ -66,9 +72,49 @@ test('parseSheetRows tìm tiêu đề sau dòng trống và bỏ dòng số th�
   assert.equal(r.rows.length, 2);
   assert.deepEqual(r.rows[0], {
     mst: '8220707543', ten: 'LÊ VĂN AN', ngaySinh: '04/06/1936', cccd: '145665829',
-    dienTich: '200', thon: 'Thôn Thống Nhất', thuePhaiNop: 54000,
+    dienTich: '200', thon: 'Thôn Thống Nhất', stt: '177', tieuMuc: '1601',
+    thuePhaiNop: 54000, daNop: null,
   });
   assert.equal(r.rows[1].thuePhaiNop, 234000);
+});
+
+// --- từ khoá cột không được bắt nhầm nhau ---
+test('từ khoá thuePhaiNop và daNop không bắt nhầm cột của nhau', () => {
+  assert.equal(T.normalizeText('Tổng số thuế phải nộp').includes('da nop'), false);
+  assert.equal(T.normalizeText('Số tiền đã nộp').includes('phai nop'), false);
+  assert.equal(T.normalizeText('Chuyển kỳ sau').includes('da nop'), false);
+  const m = [HEADER, row(1, '8220707021', 'A', '1/1/1970', '1', 1, 'Thôn A', 54000)];
+  const r = T.parseSheetRows(m);
+  assert.equal(r.ok, true);
+  assert.equal(r.rows[0].thuePhaiNop, 54000);
+  assert.equal(r.rows[0].daNop, null);
+});
+
+test('parseSheetRows: tiêu đề trải hai dòng (nhóm gộp), dòng nhãn phụ không có tên bị bỏ qua', () => {
+  const header1 = ['STT', 'MST', 'Tên NNT', '', 'Số CCCD', 'Diện tích', 'Thôn/Tổ',
+    'Tổng số thuế phải nộp', 'Tình hình nộp', ''];
+  const header2 = ['', '', '', '', '', '', '', '', 'Nộp thừa', 'Còn phải nộp'];
+  const m = [
+    header1,
+    header2,
+    ['1', '8220707543', 'LÊ VĂN AN', '', '145665829', 200, 'Thôn Thống Nhất', 54000, '', ''],
+  ];
+  const r = T.parseSheetRows(m);
+  assert.equal(r.ok, true);
+  assert.equal(r.headerRowIndex, 0);
+  assert.equal(r.rows.length, 1);
+  assert.equal(r.rows[0].thuePhaiNop, 54000);
+});
+
+test('parseSheetRows: dòng Tổng cộng cuối bảng (tên rỗng) bị loại', () => {
+  const m = [
+    HEADER,
+    row(1, '8220707543', 'LÊ VĂN AN', '04/06/1936', '145665829', 200, 'Thôn Thống Nhất', 54000),
+    ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', 27956499, '', '', ''],
+  ];
+  const r = T.parseSheetRows(m);
+  assert.equal(r.ok, true);
+  assert.equal(r.rows.length, 1);
 });
 
 test('parseSheetRows: ô thuế trống thành null, CCCD giữ số 0 đầu', () => {
@@ -130,6 +176,17 @@ test('searchRows: chuỗi rỗng trả rỗng, giới hạn kết quả', () => 
   assert.deepEqual(T.searchRows(ROWS, ''), []);
   assert.deepEqual(T.searchRows(ROWS, '   '), []);
   assert.equal(T.searchRows(ROWS, 'an', 1).length, 1);
+});
+
+test('searchRows: limit 0 trả mảng rỗng', () => {
+  assert.deepEqual(T.searchRows(ROWS, 'an', 0), []);
+});
+
+test('searchInfo trả tổng số khớp thật cùng với danh sách bị cắt', () => {
+  const r = T.searchInfo(ROWS, 'an', 1);
+  assert.deepEqual(r, { rows: [ROWS[0]], total: 3 });
+  assert.deepEqual(T.searchInfo(ROWS, 'an', 0), { rows: [], total: 3 });
+  assert.deepEqual(T.searchInfo(ROWS, '', 50), { rows: [], total: 0 });
 });
 
 // --- computeTotals ---

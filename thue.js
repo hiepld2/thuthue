@@ -27,19 +27,23 @@
   }
 
   function formatMoney(n) {
-    const s = String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    const v = Number.isFinite(n) ? n : 0;
+    const s = String(Math.round(v)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     return s + ' đ';
   }
 
   // Cột: khoá nội bộ -> { label hiển thị, danh sách từ khoá (đã bỏ dấu), bắt buộc }
   const COLUMNS = [
+    { key: 'stt', label: 'STT', keywords: ['stt', 'so thu tu'], required: false },
     { key: 'mst', label: 'MST', keywords: ['mst', 'ma so thue'], required: false },
     { key: 'ten', label: 'Tên NNT', keywords: ['ten nnt', 'ten nguoi nop thue', 'ho ten', 'ho va ten'], required: true },
     { key: 'ngaySinh', label: 'Ngày sinh', keywords: ['ngay sinh'], required: false },
     { key: 'cccd', label: 'Số CCCD', keywords: ['cccd', 'cmnd', 'can cuoc'], required: true },
     { key: 'dienTich', label: 'Diện tích', keywords: ['dien tich'], required: false },
     { key: 'thon', label: 'Thôn', keywords: ['thon'], required: false },
+    { key: 'tieuMuc', label: 'Tiểu mục', keywords: ['tieu muc'], required: false },
     { key: 'thuePhaiNop', label: 'Tổng số thuế phải nộp', keywords: ['tong so thue phai nop', 'thue phai nop', 'phai nop'], required: true },
+    { key: 'daNop', label: 'Số tiền đã nộp', keywords: ['so tien da nop', 'da nop'], required: false },
   ];
 
   function findHeaderRow(matrix) {
@@ -107,27 +111,39 @@
         cccd: get('cccd'),
         dienTich: get('dienTich'),
         thon: get('thon'),
+        stt: get('stt'),
+        tieuMuc: get('tieuMuc'),
         thuePhaiNop: map.thuePhaiNop === -1 ? null : parseMoney(r[map.thuePhaiNop]),
+        daNop: map.daNop === -1 ? null : parseMoney(r[map.daNop]),
       });
     }
     return { ok: true, rows, headerRowIndex: h };
   }
 
-  function searchRows(rows, query, limit) {
+  function matchesRow(r, q, qDigits) {
+    const byName = normalizeText(r.ten).includes(q);
+    const byId = qDigits !== '' && String(r.cccd || '').replace(/\s+/g, '').includes(qDigits);
+    return byName || byId;
+  }
+
+  function searchInfo(rows, query, limit) {
     if (limit === undefined) limit = 50;
     const q = normalizeText(query);
-    if (!q) return [];
+    if (!q) return { rows: [], total: 0 };
     const qDigits = q.replace(/\s+/g, '');
     const out = [];
+    let total = 0;
     for (const r of rows) {
-      const byName = normalizeText(r.ten).includes(q);
-      const byId = qDigits !== '' && String(r.cccd || '').replace(/\s+/g, '').includes(qDigits);
-      if (byName || byId) {
-        out.push(r);
-        if (out.length >= limit) break;
+      if (matchesRow(r, q, qDigits)) {
+        total++;
+        if (out.length < limit) out.push(r);
       }
     }
-    return out;
+    return { rows: out, total };
+  }
+
+  function searchRows(rows, query, limit) {
+    return searchInfo(rows, query, limit).rows;
   }
 
   function toCount(v) {
@@ -173,5 +189,5 @@
     return { lines, total };
   }
 
-  return { DEFAULT_RATES, normalizeText, parseMoney, formatMoney, parseSheetRows, searchRows, sumThueDat, computeTotals };
+  return { DEFAULT_RATES, normalizeText, parseMoney, formatMoney, parseSheetRows, searchRows, searchInfo, sumThueDat, computeTotals };
 });
