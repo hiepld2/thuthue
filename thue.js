@@ -113,5 +113,22 @@
     return { ok: true, rows, headerRowIndex: h };
   }
 
-  return { DEFAULT_RATES, normalizeText, parseMoney, formatMoney, parseSheetRows };
+  function searchRows(rows, query, limit) {
+    if (limit === undefined) limit = 50;
+    const q = normalizeText(query);
+    if (!q) return [];
+    const qDigits = q.replace(/\s+/g, '');
+    const out = [];
+    for (const r of rows) {
+      const byName = normalizeText(r.ten).includes(q);
+      const byId = qDigits !== '' && String(r.cccd || '').replace(/\s+/g, '').includes(qDigits);
+      if (byName || byId) {
+        out.push(r);
+        if (out.length >= limit) break;
+      }
+    }
+    return out;
+  }
+
+  return { DEFAULT_RATES, normalizeText, parseMoney, formatMoney, parseSheetRows, searchRows };
 });

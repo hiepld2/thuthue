@@ -108,4 +108,28 @@ test('parseSheetRows: không bắt nhầm cột chỉ chứa chữ "tên"', () =
   assert.equal(ok.rows[0].ten, 'NNT');
 });
 
+// --- searchRows ---
+const ROWS = [
+  { mst: '1', ten: 'LÊ VĂN AN', ngaySinh: '', cccd: '145665829', dienTich: '', thon: '', thuePhaiNop: 54000 },
+  { mst: '2', ten: 'NGUYỄN VĂN AN', ngaySinh: '', cccd: '011618238', dienTich: '', thon: '', thuePhaiNop: 234000 },
+  { mst: '3', ten: 'Giang Lê Bằng', ngaySinh: '', cccd: '033167009147', dienTich: '', thon: '', thuePhaiNop: null },
+];
+
+test('searchRows tìm tên không dấu, không phân biệt hoa thường', () => {
+  assert.deepEqual(T.searchRows(ROWS, 'van an').map(r => r.mst), ['1', '2']);
+  assert.deepEqual(T.searchRows(ROWS, 'LE van').map(r => r.mst), ['1']);
+  assert.deepEqual(T.searchRows(ROWS, 'giang le bang').map(r => r.mst), ['3']);
+});
+
+test('searchRows tìm theo CCCD một phần', () => {
+  assert.deepEqual(T.searchRows(ROWS, '0331').map(r => r.mst), ['3']);
+  assert.deepEqual(T.searchRows(ROWS, '033 167 009 147').map(r => r.mst), ['3']);
+});
+
+test('searchRows: chuỗi rỗng trả rỗng, giới hạn kết quả', () => {
+  assert.deepEqual(T.searchRows(ROWS, ''), []);
+  assert.deepEqual(T.searchRows(ROWS, '   '), []);
+  assert.equal(T.searchRows(ROWS, 'an', 1).length, 1);
+});
+
 console.log(`\n${passed} test đạt`);
