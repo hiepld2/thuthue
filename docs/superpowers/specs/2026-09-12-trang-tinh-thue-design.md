@@ -61,8 +61,9 @@ Phần giao diện chỉ gọi ba hàm trên và vẽ kết quả.
 
 - Ô nhập duy nhất. Chuẩn hoá chuỗi tìm: bỏ dấu, thường hoá, gộp khoảng trắng.
 - Khớp nếu tên chuẩn hoá chứa chuỗi tìm, hoặc CCCD chứa chuỗi tìm.
-- Hiện tối đa 50 kết quả dạng danh sách: tên, ngày sinh, CCCD, thôn, thuế phải
-  nộp. Bấm một dòng để chọn.
+- Luôn hiện danh sách kết quả (tối đa 50), kể cả khi chỉ có một. Mỗi dòng gồm
+  tên, ngày sinh, CCCD, thôn, thuế phải nộp để phân biệt các hộ trùng tên. Bấm
+  một dòng để chọn; không tự chọn thay người dùng.
 - Chuỗi tìm rỗng thì không hiện kết quả.
 - Không có kết quả thì hiện "Không tìm thấy trong file". Người dùng vẫn có thể
   bấm "Tính không có thuế đất" để tiếp tục với thuế đất = 0 đ.
