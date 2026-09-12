@@ -132,4 +132,51 @@ test('searchRows: chuỗi rỗng trả rỗng, giới hạn kết quả', () => 
   assert.equal(T.searchRows(ROWS, 'an', 1).length, 1);
 });
 
+// --- computeTotals ---
+test('computeTotals tính đủ 4 dòng và tổng', () => {
+  const r = T.computeTotals(
+    { thueDat: 54000, nguoiNghiaTrang: 4, nguoiThienTai: 3, nguoiMoiTruong: 4, soThang: 6 },
+    T.DEFAULT_RATES
+  );
+  assert.equal(r.lines.length, 4);
+  assert.deepEqual(r.lines.map(l => l.key), ['thueDat', 'nghiaTrang', 'thienTai', 'moiTruong']);
+  assert.equal(r.lines[0].amount, 54000);
+  assert.equal(r.lines[1].amount, 60000);   // 15000 × 4
+  assert.equal(r.lines[2].amount, 30000);   // 10000 × 3
+  assert.equal(r.lines[3].amount, 360000);  // 15000 × 4 × 6
+  assert.equal(r.total, 504000);
+  assert.equal(r.lines[1].detail, '15.000 đ × 4 người');
+  assert.equal(r.lines[3].detail, '15.000 đ × 4 người × 6 tháng');
+  assert.equal(r.lines[0].note, undefined);
+});
+
+test('computeTotals: thuế đất null thành 0 và có ghi chú', () => {
+  const r = T.computeTotals(
+    { thueDat: null, nguoiNghiaTrang: 0, nguoiThienTai: 0, nguoiMoiTruong: 0, soThang: 6 },
+    T.DEFAULT_RATES
+  );
+  assert.equal(r.lines[0].amount, 0);
+  assert.equal(r.lines[0].note, 'Không tìm thấy trong file');
+  assert.equal(r.total, 0);
+});
+
+test('sumThueDat cộng nhiều dòng, đếm dòng thiếu', () => {
+  const r1 = { thuePhaiNop: 54000 }, r2 = { thuePhaiNop: 27000 }, r3 = { thuePhaiNop: null };
+  assert.deepEqual(T.sumThueDat([r1, r2]), { thueDat: 81000, soDongThieu: 0 });
+  assert.deepEqual(T.sumThueDat([r1, r3]), { thueDat: 54000, soDongThieu: 1 });
+  assert.deepEqual(T.sumThueDat([r3]), { thueDat: null, soDongThieu: 1 });
+  assert.deepEqual(T.sumThueDat([]), { thueDat: null, soDongThieu: 0 });
+});
+
+test('computeTotals: giá trị âm, NaN, chuỗi coi là 0; đơn giá tuỳ chỉnh', () => {
+  const r = T.computeTotals(
+    { thueDat: 1000, nguoiNghiaTrang: -2, nguoiThienTai: NaN, nguoiMoiTruong: '3', soThang: 'x' },
+    { nghiaTrang: 1, thienTai: 1, moiTruong: 20000 }
+  );
+  assert.equal(r.lines[1].amount, 0);
+  assert.equal(r.lines[2].amount, 0);
+  assert.equal(r.lines[3].amount, 0);       // 3 người × 0 tháng
+  assert.equal(r.total, 1000);
+});
+
 console.log(`\n${passed} test đạt`);

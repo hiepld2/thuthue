@@ -130,5 +130,48 @@
     return out;
   }
 
-  return { DEFAULT_RATES, normalizeText, parseMoney, formatMoney, parseSheetRows, searchRows };
+  function toCount(v) {
+    const n = typeof v === 'number' ? v : parseInt(String(v), 10);
+    if (!Number.isFinite(n) || n < 0) return 0;
+    return Math.floor(n);
+  }
+
+  function sumThueDat(rows) {
+    let total = 0, soDongThieu = 0, coSo = false;
+    for (const r of rows || []) {
+      if (r.thuePhaiNop === null || r.thuePhaiNop === undefined) soDongThieu++;
+      else { total += r.thuePhaiNop; coSo = true; }
+    }
+    return { thueDat: coSo ? total : null, soDongThieu };
+  }
+
+  function computeTotals(input, rates) {
+    const thueDat = input.thueDat === null || input.thueDat === undefined ? null : Number(input.thueDat);
+    const nNT = toCount(input.nguoiNghiaTrang);
+    const nTT = toCount(input.nguoiThienTai);
+    const nMT = toCount(input.nguoiMoiTruong);
+    const thang = toCount(input.soThang);
+    const gNT = toCount(rates.nghiaTrang);
+    const gTT = toCount(rates.thienTai);
+    const gMT = toCount(rates.moiTruong);
+
+    const thueDatLine = {
+      key: 'thueDat',
+      label: 'Thuế sử dụng đất phi nông nghiệp',
+      detail: 'Theo sổ bộ thuế',
+      amount: thueDat === null || !Number.isFinite(thueDat) ? 0 : thueDat,
+    };
+    if (thueDat === null) thueDatLine.note = 'Không tìm thấy trong file';
+
+    const lines = [
+      thueDatLine,
+      { key: 'nghiaTrang', label: 'Nghĩa trang nhân dân', detail: `${formatMoney(gNT)} × ${nNT} người`, amount: gNT * nNT },
+      { key: 'thienTai', label: 'Quỹ phòng chống thiên tai', detail: `${formatMoney(gTT)} × ${nTT} người`, amount: gTT * nTT },
+      { key: 'moiTruong', label: 'Bảo vệ môi trường', detail: `${formatMoney(gMT)} × ${nMT} người × ${thang} tháng`, amount: gMT * nMT * thang },
+    ];
+    const total = lines.reduce((s, l) => s + l.amount, 0);
+    return { lines, total };
+  }
+
+  return { DEFAULT_RATES, normalizeText, parseMoney, formatMoney, parseSheetRows, searchRows, sumThueDat, computeTotals };
 });
