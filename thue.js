@@ -34,7 +34,7 @@
   // Cột: khoá nội bộ -> { label hiển thị, danh sách từ khoá (đã bỏ dấu), bắt buộc }
   const COLUMNS = [
     { key: 'mst', label: 'MST', keywords: ['mst', 'ma so thue'], required: false },
-    { key: 'ten', label: 'Tên NNT', keywords: ['ten nnt', 'ten nguoi nop thue', 'ho ten', 'ten'], required: true },
+    { key: 'ten', label: 'Tên NNT', keywords: ['ten nnt', 'ten nguoi nop thue', 'ho ten', 'ho va ten'], required: true },
     { key: 'ngaySinh', label: 'Ngày sinh', keywords: ['ngay sinh'], required: false },
     { key: 'cccd', label: 'Số CCCD', keywords: ['cccd', 'cmnd', 'can cuoc'], required: true },
     { key: 'dienTich', label: 'Diện tích', keywords: ['dien tich'], required: false },

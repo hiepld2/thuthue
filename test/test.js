@@ -99,4 +99,13 @@ test('parseSheetRows: dòng không có tên bị bỏ qua, CCCD số được đ
   assert.equal(r.rows[0].cccd, '145266887');
 });
 
+test('parseSheetRows: không bắt nhầm cột chỉ chứa chữ "tên"', () => {
+  const r = T.parseSheetRows([['STT', 'MST', 'Tên chủ hộ', 'Số CCCD', 'Tổng số thuế phải nộp'], [1, 'x', 'A', '1', 1]]);
+  assert.equal(r.ok, false);
+  assert.deepEqual(r.missingColumns, ['Tên NNT']);
+  const ok = T.parseSheetRows([['STT', 'MST', 'Tên chủ hộ', 'Tên NNT', 'Số CCCD', 'Tổng số thuế phải nộp'], [1, 'x', 'CHỦ', 'NNT', '1', 1]]);
+  assert.equal(ok.ok, true);
+  assert.equal(ok.rows[0].ten, 'NNT');
+});
+
 console.log(`\n${passed} test đạt`);
