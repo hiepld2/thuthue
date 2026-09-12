@@ -1,0 +1,10 @@
+# Ảnh sổ bộ và file Excel thật (dữ liệu cá nhân) không đưa lên repo
+*.JPG
+*.jpg
+*.jpeg
+*.HEIC
+*.heic
+*.xlsx
+*.xls
+!test/mau.xlsx
+.DS_Store
