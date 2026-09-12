@@ -21,7 +21,9 @@
   .so { display: inline-flex; width: 34px; height: 34px; border-radius: 50%; background: var(--chinh); color: #fff; align-items: center; justify-content: center; font-weight: 700; flex: none; }
   .huongdan { color: var(--mo); margin: 0 0 12px; }
   button, input { font: inherit; }
-  .nut { min-height: 48px; padding: 0 22px; border-radius: 10px; border: 2px solid var(--chinh); background: var(--chinh); color: #fff; font-weight: 700; cursor: pointer; }
+  .nut { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 22px; border-radius: 10px; border: 2px solid var(--chinh); background: var(--chinh); color: #fff; font-weight: 700; cursor: pointer; }
+  .mo-di { pointer-events: none; opacity: .5; }
+  .sr-only { position: absolute; left: -9999px; }
   .nut:hover { background: var(--chinh-dam); }
   .nut.phu { background: #fff; color: var(--chinh); }
   .nut:disabled { opacity: .5; cursor: default; }
@@ -78,9 +80,11 @@
   <!-- Bước 2 -->
   <section class="buoc an" id="buoc2">
     <h2><span class="so">2</span> Tìm hộ cần tính</h2>
-    <p class="huongdan">Gõ tên hoặc số CCCD, rồi bấm vào đúng hộ. Hộ có nhiều thửa đất sẽ có nhiều dòng: các dòng cùng số CCCD được tích sẵn, bạn có thể bỏ tích dòng không cần.</p>
+    <p class="huongdan">Gõ tên hoặc số CCCD, rồi bấm vào đúng hộ. Một hộ có thể có nhiều dòng (thửa đất hoặc khoản thu): các dòng cùng hộ được tích sẵn, bạn có thể bỏ tích dòng không cần.</p>
+    <label for="oTim" class="sr-only">Tên hoặc số CCCD</label>
     <input type="text" id="oTim" placeholder="Ví dụ: Lê Văn An hoặc 145665829" autocomplete="off">
     <ul id="dsKetQua" class="ketqua an"></ul>
+    <div id="thongBaoCat" class="trangthai an"></div>
     <div id="thanhChon" class="hang-nut an"><button type="button" class="nut" id="nutTinh">Tính cho 0 dòng đã chọn</button></div>
     <div id="khongThay" class="trangthai loi an">
       Không tìm thấy trong file
@@ -144,6 +148,15 @@
   const $ = id => document.getElementById(id);
   const KHOA_LUU = 'thue-settings';
 
+  if (typeof XLSX === 'undefined') {
+    const el = $('trangThaiFile');
+    el.className = 'trangthai loi';
+    el.textContent = 'Trang chưa tải được thư viện đọc Excel. Hãy kiểm tra kết nối mạng rồi tải lại trang.';
+    $('fileExcel').disabled = true;
+    document.querySelector('label[for=fileExcel]').classList.add('mo-di');
+    return;
+  }
+
   // ---- Đơn giá + localStorage ----
   function docCaiDat() {
     try {
@@ -162,12 +175,14 @@
     try { localStorage.setItem(KHOA_LUU, JSON.stringify(cd)); } catch (e) { /* bỏ qua */ }
   }
   function layCaiDatTuForm() {
-    return {
-      nghiaTrang: Number($('giaNghiaTrang').value) || 0,
-      thienTai: Number($('giaThienTai').value) || 0,
-      moiTruong: Number($('giaMoiTruong').value) || 0,
-      soThang: Number($('thangMacDinh').value) || 0,
-    };
+    const out = Object.assign({}, caiDat);
+    const M = { nghiaTrang: 'giaNghiaTrang', thienTai: 'giaThienTai', moiTruong: 'giaMoiTruong', soThang: 'thangMacDinh' };
+    for (const k of Object.keys(M)) {
+      const s = $(M[k]).value;
+      const n = Number(s);
+      if (s.trim() !== '' && Number.isFinite(n) && n >= 0) out[k] = n;
+    }
+    return out;
   }
   function doCaiDatVaoForm(cd) {
     $('giaNghiaTrang').value = cd.nghiaTrang;
@@ -189,6 +204,7 @@
 
   // ---- Bước 1: đọc file ----
   let cacHo = [];
+  const daChon = new Set(); // các bản ghi (object trong cacHo) đang được tích
   function baoFile(loai, chu) {
     const el = $('trangThaiFile');
     el.className = 'trangthai ' + loai;
@@ -219,18 +235,29 @@
   });
 
   // ---- Bước 2: tìm và chọn nhiều dòng ----
-  const daChon = new Set(); // các bản ghi (object trong cacHo) đang được tích
   let ketQuaHienTai = [];
   let dongCanFocus = null;
 
   function moTaDong(h) {
-    return [h.ngaySinh && `Sinh ${h.ngaySinh}`, h.cccd && `CCCD ${h.cccd}`, h.thon, h.dienTich && `${h.dienTich} m²`]
-      .filter(Boolean).join(' · ');
+    const cccd = String(h.cccd || '').trim();
+    return [
+      h.stt && `STT ${h.stt}`,
+      h.tieuMuc && `Tiểu mục ${h.tieuMuc}`,
+      h.ngaySinh && `Sinh ${h.ngaySinh}`,
+      (!cccd || cccd === '0') ? 'chưa có CCCD' : `CCCD ${cccd}`,
+      h.thon,
+      h.dienTich && `${h.dienTich} m²`,
+      h.daNop > 0 && `Đã nộp ${Thue.formatMoney(h.daNop)}`,
+    ].filter(Boolean).join(' · ');
   }
   function cungHo(a, b) {
+    if (Thue.normalizeText(a.ten) !== Thue.normalizeText(b.ten)) return false;
     const cccdA = String(a.cccd || '').trim();
-    if (!cccdA || cccdA === '0') return false;
-    return cccdA === String(b.cccd || '').trim() && Thue.normalizeText(a.ten) === Thue.normalizeText(b.ten);
+    const cccdB = String(b.cccd || '').trim();
+    if (cccdA && cccdA !== '0') return cccdA === cccdB;
+    // CCCD rỗng hoặc "0": khớp theo MST nếu có
+    const mstA = String(a.mst || '').trim();
+    return !!mstA && mstA === String(b.mst || '').trim();
   }
   function capNhatNutTinh() {
     const n = daChon.size;
@@ -283,10 +310,17 @@
   }
   function timKiem() {
     const q = $('oTim').value;
-    ketQuaHienTai = Thue.searchRows(cacHo, q, 50);
-    if (!q.trim()) { ketQuaHienTai = []; an('dsKetQua'); an('khongThay'); an('thanhChon'); return; }
-    if (ketQuaHienTai.length === 0) { an('dsKetQua'); an('thanhChon'); hien('khongThay'); return; }
+    const info = Thue.searchInfo(cacHo, q, 50);
+    ketQuaHienTai = info.rows;
+    if (!q.trim()) { ketQuaHienTai = []; an('dsKetQua'); an('khongThay'); an('thanhChon'); an('thongBaoCat'); return; }
+    if (ketQuaHienTai.length === 0) { an('dsKetQua'); an('thanhChon'); an('thongBaoCat'); hien('khongThay'); return; }
     an('khongThay');
+    if (info.total > ketQuaHienTai.length) {
+      $('thongBaoCat').textContent = `Đang hiện ${ketQuaHienTai.length} kết quả đầu trong ${info.total}. Hãy gõ thêm tên hoặc số CCCD để thu hẹp.`;
+      hien('thongBaoCat');
+    } else {
+      an('thongBaoCat');
+    }
     veKetQua();
   }
   $('oTim').addEventListener('input', timKiem);
