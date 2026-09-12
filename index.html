@@ -58,9 +58,13 @@
   .nhom { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--vien); }
   .nhom label { flex: 1 1 220px; }
   .nhom input { flex: 0 0 120px; text-align: center; }
-  .hd-hang { display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--vien); }
+  .hd-hang { display: flex; justify-content: space-between; gap: 12px; padding: 12px 10px; border-radius: 8px; margin-bottom: 6px; border-bottom: 0; }
   .hd-hang .hd-tien { white-space: nowrap; font-weight: 700; text-align: right; }
-  .hd-tong { border-top: 3px solid var(--chu); border-bottom: 0; font-size: 1.4rem; font-weight: 800; }
+  .hd-hang.k-thueDat   { background: #e8f1fb; }  /* xanh dương nhạt */
+  .hd-hang.k-nghiaTrang{ background: #efe9fb; }  /* tím nhạt */
+  .hd-hang.k-thienTai  { background: #fdeedd; }  /* cam nhạt */
+  .hd-hang.k-moiTruong { background: #e6f4ea; }  /* xanh lá nhạt */
+  .hd-tong { background: #fff; border-top: 3px solid var(--chu); border-radius: 0; margin-top: 8px; font-size: 1.4rem; font-weight: 800; }
   @media (max-width: 480px) {
     main { padding: 12px 10px 40px; }
     .buoc { padding: 14px; border-radius: 10px; }
@@ -334,7 +338,9 @@
   }
   $('oTim').addEventListener('input', timKiem);
   $('nutKhongThue').addEventListener('click', () => {
-    chonHo({ ten: $('oTim').value.trim() || 'Hộ chưa có trong sổ', rows: [] });
+    chonHo({ ten: $('oTim').value.trim() || 'Hộ chưa có trong sổ', rows: [] }, { cuon: true });
+    $('buoc3').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    $('nguoiNghiaTrang').focus();
   });
 
   // ---- Bước 3: hiện form khi có dòng được chọn ----
@@ -342,12 +348,13 @@
   function capNhatBuoc3() {
     if (daChon.size > 0) {
       const rows = cacHo.filter(h => daChon.has(h)); // giữ thứ tự trong file
-      chonHo({ ten: rows[0].ten, rows }, true);
+      chonHo({ ten: rows[0].ten, rows }, { giuSoNguoi: true, cuon: false });
     } else if (hoDangChon === null || hoDangChon.rows.length > 0) {
       an('buoc3'); an('hoaDon'); hoDangChon = null;
     }
   }
-  function chonHo(ho, giuSoNguoi) {
+  function chonHo(ho, tuyChon) {
+    tuyChon = tuyChon || {};
     hoDangChon = ho;
     const tt = $('thongTinHo');
     tt.innerHTML = '<div class="ten"></div><div class="phu-chu" id="soDong"></div>';
@@ -357,13 +364,13 @@
     } else {
       tt.querySelector('#soDong').textContent = ho.rows.length === 1 ? '1 dòng đã chọn' : `${ho.rows.length} dòng đã chọn`;
     }
-    if (!giuSoNguoi) {
+    if (!tuyChon.giuSoNguoi) {
       $('nguoiNghiaTrang').value = 0; $('nguoiThienTai').value = 0; $('nguoiMoiTruong').value = 0;
       $('soThang').value = caiDat.soThang;
     }
     const dangHien = !$('buoc3').classList.contains('an');
     hien('buoc3');
-    if (!dangHien) {
+    if (!dangHien && tuyChon.cuon) {
       $('buoc3').scrollIntoView({ behavior: 'smooth', block: 'start' });
       $('nguoiNghiaTrang').focus();
     }
@@ -409,10 +416,15 @@
     };
     for (const l of r.lines) {
       const hang = document.createElement('div');
-      hang.className = 'hd-hang';
+      hang.className = 'hd-hang k-' + l.key;
       const ten = document.createElement('div');
-      ten.className = 'hd-ten';
-      ten.innerHTML = `${l.label}<div class="hd-ct">${chiTiet[l.key] || l.detail}</div>`;
+      const nhan = document.createElement('div');
+      nhan.className = 'hd-ten';
+      nhan.textContent = l.label;
+      const ct = document.createElement('div');
+      ct.className = 'hd-ct';
+      ct.textContent = chiTiet[l.key] || l.detail;
+      ten.append(nhan, ct);
       if (l.key === 'thueDat' && ghiChuThueDat) {
         const gc = document.createElement('span');
         gc.className = 'ghichu';
