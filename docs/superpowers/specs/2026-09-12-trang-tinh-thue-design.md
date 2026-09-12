@@ -27,11 +27,13 @@ SheetJS (`xlsx`) tải từ CDN cdnjs, phiên bản ghim cố định. Không c�
 
 Ba đơn vị logic trong JavaScript, tách thành các hàm thuần để dễ kiểm thử:
 
-1. `parseWorkbook(arrayBuffer) -> { rows, missingColumns }`
-   Đọc sheet đầu tiên, tìm dòng tiêu đề, ánh xạ cột theo tên, trả về mảng bản
-   ghi chuẩn hoá `{ mst, ten, ngaySinh, cccd, dienTich, thon, thuePhaiNop }`.
-2. `searchRows(rows, query) -> rows[]`
-   Tìm theo tên hoặc CCCD, không phân biệt hoa thường và dấu, khớp một phần.
+1. `parseSheetRows(matrix) -> { ok, rows, missingColumns, error }`
+   `matrix` là mảng hai chiều lấy từ SheetJS `sheet_to_json(sheet, { header: 1 })`.
+   Tìm dòng tiêu đề, ánh xạ cột theo tên, trả về mảng bản ghi chuẩn hoá
+   `{ mst, ten, ngaySinh, cccd, dienTich, thon, stt, tieuMuc, thuePhaiNop, daNop }`.
+2. `searchRows(rows, query, limit) -> rows[]` và `searchInfo(rows, query, limit) -> { rows, total }`
+   Tìm theo tên hoặc CCCD, không phân biệt hoa thường và dấu, khớp một phần;
+   `searchInfo` trả thêm tổng số dòng khớp thật trước khi cắt theo `limit`.
 3. `computeTotals(input, rates) -> { lines, total }`
    Tính 4 dòng và tổng từ số thuế đất, số người từng mục, số tháng, đơn giá.
 
@@ -50,6 +52,9 @@ Phần giao diện chỉ gọi ba hàm trên và vẽ kết quả.
   - `dienTich`: chứa "dien tich"
   - `thon`: chứa "thon"
   - `thuePhaiNop`: chứa "tong so thue phai nop" (ưu tiên), sau đó "phai nop"
+  - `stt` (tuỳ chọn): chứa "stt" hoặc "so thu tu"
+  - `tieuMuc` (tuỳ chọn): chứa "tieu muc"
+  - `daNop` (tuỳ chọn): chứa "so tien da nop" hoặc "da nop"
 - Cột bắt buộc: `ten`, `cccd`, `thuePhaiNop`. Không dùng từ khoá `ten` đơn lẻ để
   tránh bắt nhầm cột khác có chữ "tên"; chấp nhận `ten nnt`, `ten nguoi nop thue`,
   `ho ten`, `ho va ten`. Thiếu cột nào thì báo lỗi liệt kê
@@ -66,16 +71,20 @@ Phần giao diện chỉ gọi ba hàm trên và vẽ kết quả.
 - Luôn hiện danh sách kết quả (tối đa 50), kể cả khi chỉ có một. Mỗi dòng gồm
   ô tích, tên, ngày sinh, CCCD, thôn, diện tích, thuế phải nộp để phân biệt các
   hộ trùng tên. Không tự chọn thay người dùng.
-- Một hộ có thể có nhiều dòng trong Excel (nhiều thửa đất, cùng MST/tên/CCCD).
-  Bấm một dòng sẽ tích dòng đó và tự tích các dòng khác có cùng CCCD (khi CCCD
-  khác rỗng và khác "0") và cùng tên chuẩn hoá; người dùng có thể bỏ tích từng
-  dòng. Nút "Tính cho N dòng đã chọn" chuyển sang bước 3.
+- Một hộ có thể có nhiều dòng trong Excel (nhiều thửa đất hoặc khoản thu, ví
+  dụ dòng thuế và dòng tiền chậm nộp — cột "Tiểu mục" khác nhau — cùng
+  MST/tên/CCCD). Bấm một dòng sẽ tích dòng đó và tự tích các dòng khác cùng
+  tên chuẩn hoá: khớp theo CCCD khi CCCD khác rỗng và khác "0"; nếu CCCD rỗng
+  hoặc "0" thì khớp theo MST (khi MST khác rỗng). Người dùng có thể bỏ tích
+  từng dòng. Nút "Tính cho N dòng đã chọn" chuyển sang bước 3.
+- Kết quả tìm kiếm giới hạn tối đa 50 dòng hiển thị; nếu tổng số dòng khớp còn
+  nhiều hơn 50, hiện thêm thông báo mời gõ thêm để thu hẹp.
 - Bước 3 liệt kê các dòng đã chọn; thuế đất = tổng "Tổng số thuế phải nộp" của
   các dòng đó. Dòng nào trống số thuế thì tính 0 đ và ghi chú; nếu mọi dòng đều
   trống thì ghi "Không tìm thấy trong file".
 - Chuỗi tìm rỗng thì không hiện kết quả.
 - Không có kết quả thì hiện "Không tìm thấy trong file". Người dùng vẫn có thể
-  bấm "Tính không có thuế đất" để tiếp tục với thuế đất = 0 đ.
+  bấm "Tính với thuế đất 0 đ" để tiếp tục với thuế đất = 0 đ.
 
 ## Tính tiền
 
@@ -110,7 +119,7 @@ Phần giao diện chỉ gọi ba hàm trên và vẽ kết quả.
 - Không tìm thấy dòng tiêu đề: "Không tìm thấy dòng tiêu đề (cần có cột MST và
   Tên NNT)."
 - Thiếu cột bắt buộc: "Thiếu cột: ...".
-- Sau khi nạp thành công hiện "Đã nạp N hộ".
+- Sau khi nạp thành công hiện "Đã nạp N dòng".
 
 ## Giao diện
 

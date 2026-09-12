@@ -10,7 +10,7 @@ phòng chống thiên tai, bảo vệ môi trường.
 2. Bước 1: bấm **Chọn file Excel**, chọn file sổ bộ thuế (.xlsx/.xls).
    File chỉ được đọc trên máy bạn, không gửi đi đâu.
 3. Bước 2: gõ tên hoặc số CCCD, bấm vào hộ cần tính.
-   Hộ có nhiều thửa đất sẽ có nhiều dòng; bấm một dòng sẽ tự tích các dòng cùng số CCCD, bạn có thể bỏ tích rồi bấm **Tính cho N dòng đã chọn**.
+   Một hộ có thể có nhiều dòng (nhiều thửa đất hoặc khoản thu, ví dụ tiền chậm nộp); bấm một dòng sẽ tự tích các dòng cùng hộ, bạn có thể bỏ tích rồi bấm **Tính cho N dòng đã chọn**.
 4. Bước 3: nhập số người từng khoản, xem tổng tiền.
 
 Đơn giá có thể sửa ở khối **Đơn giá** cuối trang, được ghi nhớ trên trình duyệt.
@@ -19,7 +19,10 @@ phòng chống thiên tai, bảo vệ môi trường.
 
 Sheet đầu tiên phải có dòng tiêu đề chứa các cột: `MST`, `Tên NNT`, `Số CCCD`,
 `Tổng số thuế phải nộp`. Các cột khác (Ngày sinh, Diện tích, Thôn) là tuỳ chọn.
-Xem ví dụ tại `test/mau.xlsx`.
+Ngoài ra còn nhận thêm các cột tuỳ chọn `STT`, `Tiểu mục`, `Số tiền đã nộp` —
+hiện kèm trong danh sách để phân biệt các dòng của cùng một hộ (ví dụ dòng
+thuế và dòng tiền chậm nộp). Số tiền được coi là số nguyên đồng (dấu chấm/phẩy
+chỉ là phân cách nghìn). Xem ví dụ tại `test/mau.xlsx`.
 
 ## Đưa lên GitHub Pages
 
