@@ -22,7 +22,7 @@ Không có:
 
 ## Kiến trúc
 
-Một file `index.html` duy nhất chứa HTML, CSS, JavaScript. Thư viện duy nhất:
+Hai file: `thue.js` chứa các hàm thuần (chạy được trong Node và trình duyệt) và `index.html` chứa giao diện, nạp SheetJS và `thue.js`. Thư viện duy nhất:
 SheetJS (`xlsx`) tải từ CDN cdnjs, phiên bản ghim cố định. Không có bước build.
 
 Ba đơn vị logic trong JavaScript, tách thành các hàm thuần để dễ kiểm thử:
@@ -130,8 +130,7 @@ Phần giao diện chỉ gọi ba hàm trên và vẽ kết quả.
 
 - Tạo file `test/mau.xlsx` khoảng 10 dòng lấy từ ảnh sổ bộ (tiêu đề giống bảng
   in) để kiểm tra thủ công. File này được commit vì chỉ chứa dữ liệu mẫu.
-- File `test/test.html` chạy các hàm thuần bằng assert đơn giản trong trình
-  duyệt: tìm dòng tiêu đề, ánh xạ cột, chuyển số có dấu chấm, tìm không dấu,
+- File `test/test.js` chạy bằng `node test/test.js` với `node:assert`: tìm dòng tiêu đề, ánh xạ cột, chuyển số có dấu chấm, tìm không dấu,
   tìm theo CCCD, tính tổng, xử lý `null`.
 - Mở `index.html` trong trình duyệt của app, nạp `test/mau.xlsx`, tra một tên
   và kiểm tra tổng.
